@@ -4,11 +4,11 @@ import "encoding/json"
 
 // GetPositionalFloat64Params parses positional param member of JSON-RPC 2.0 request
 // that is know to contain float64 array
-func GetPositionalFloat64Params(paramsRaw json.RawMessage) ([]float64, *ErrorObject) {
+func GetPositionalFloat64Params(data ParametersObject) ([]float64, *ErrorObject) {
 
 	params := make([]float64, 0)
 
-	err := json.Unmarshal(paramsRaw, &params)
+	err := json.Unmarshal(data.Params, &params)
 	if err != nil {
 		return nil, &ErrorObject{
 			Code:    InvalidParamsCode,
@@ -22,11 +22,11 @@ func GetPositionalFloat64Params(paramsRaw json.RawMessage) ([]float64, *ErrorObj
 
 // GetPositionalInt64Params parses positional param member of JSON-RPC 2.0 request
 // that is know to contain int64 array
-func GetPositionalInt64Params(paramsRaw json.RawMessage) ([]int64, *ErrorObject) {
+func GetPositionalInt64Params(data ParametersObject) ([]int64, *ErrorObject) {
 
 	params := make([]int64, 0)
 
-	err := json.Unmarshal(paramsRaw, &params)
+	err := json.Unmarshal(data.Params, &params)
 	if err != nil {
 		return nil, &ErrorObject{
 			Code:    InvalidParamsCode,
@@ -40,11 +40,11 @@ func GetPositionalInt64Params(paramsRaw json.RawMessage) ([]int64, *ErrorObject)
 
 // GetPositionalIntParams parses positional param member of JSON-RPC 2.0 request
 // that is know to contain int array
-func GetPositionalIntParams(paramsRaw json.RawMessage) ([]int, *ErrorObject) {
+func GetPositionalIntParams(data ParametersObject) ([]int, *ErrorObject) {
 
 	params := make([]int, 0)
 
-	err := json.Unmarshal(paramsRaw, &params)
+	err := json.Unmarshal(data.Params, &params)
 	if err != nil {
 		return nil, &ErrorObject{
 			Code:    InvalidParamsCode,
@@ -58,11 +58,11 @@ func GetPositionalIntParams(paramsRaw json.RawMessage) ([]int, *ErrorObject) {
 
 // GetPositionalUint64Params parses positional param member of JSON-RPC 2.0 request
 // that is know to contain int64 array
-func GetPositionalUint64Params(paramsRaw json.RawMessage) ([]uint64, *ErrorObject) {
+func GetPositionalUint64Params(data ParametersObject) ([]uint64, *ErrorObject) {
 
 	params := make([]uint64, 0)
 
-	err := json.Unmarshal(paramsRaw, &params)
+	err := json.Unmarshal(data.Params, &params)
 	if err != nil {
 		return nil, &ErrorObject{
 			Code:    InvalidParamsCode,
@@ -76,11 +76,11 @@ func GetPositionalUint64Params(paramsRaw json.RawMessage) ([]uint64, *ErrorObjec
 
 // GetPositionalUintParams parses positional param member of JSON-RPC 2.0 request
 // that is know to contain uint array
-func GetPositionalUintParams(paramsRaw json.RawMessage) ([]uint, *ErrorObject) {
+func GetPositionalUintParams(data ParametersObject) ([]uint, *ErrorObject) {
 
 	params := make([]uint, 0)
 
-	err := json.Unmarshal(paramsRaw, &params)
+	err := json.Unmarshal(data.Params, &params)
 	if err != nil {
 		return nil, &ErrorObject{
 			Code:    InvalidParamsCode,
@@ -94,11 +94,11 @@ func GetPositionalUintParams(paramsRaw json.RawMessage) ([]uint, *ErrorObject) {
 
 // GetPositionalStringParams parses positional param member of JSON-RPC 2.0 request
 // that is know to contain string array
-func GetPositionalStringParams(paramsRaw json.RawMessage) ([]string, *ErrorObject) {
+func GetPositionalStringParams(data ParametersObject) ([]string, *ErrorObject) {
 
 	params := make([]string, 0)
 
-	err := json.Unmarshal(paramsRaw, &params)
+	err := json.Unmarshal(data.Params, &params)
 	if err != nil {
 		return nil, &ErrorObject{
 			Code:    InvalidParamsCode,

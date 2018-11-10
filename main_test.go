@@ -33,11 +33,11 @@ type Result struct {
 	ID      interface{}  `json:"id"`
 }
 
-func Subtract(paramsRaw json.RawMessage) (interface{}, *ErrorObject) {
+func Subtract(data ParametersObject) (interface{}, *ErrorObject) {
 
 	paramObj := new(SubtractParams)
 
-	err := json.Unmarshal(paramsRaw, paramObj)
+	err := json.Unmarshal(data.Params, paramObj)
 	if err != nil {
 
 		errObj := &ErrorObject{
@@ -53,7 +53,7 @@ func Subtract(paramsRaw json.RawMessage) (interface{}, *ErrorObject) {
 
 				var params []float64
 
-				params, errObj = GetPositionalFloat64Params(paramsRaw)
+				params, errObj = GetPositionalFloat64Params(data)
 				if errObj != nil {
 					return nil, errObj
 				}
@@ -123,7 +123,7 @@ func init() {
 			},
 		)
 
-		s.Register("update", Method{Method: func(params json.RawMessage) (interface{}, *ErrorObject) { return nil, nil }})
+		s.Register("update", Method{Method: func(data ParametersObject) (interface{}, *ErrorObject) { return nil, nil }})
 		s.Register("subtract", Method{Method: Subtract})
 
 		s.Start()

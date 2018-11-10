@@ -16,7 +16,7 @@ import (
 */
 
 // Call invokes the named method with the provided parameters
-func (s *Service) Call(name string, params json.RawMessage) (interface{}, *ErrorObject) {
+func (s *Service) Call(name string, data ParametersObject) (interface{}, *ErrorObject) {
 
 	// check that request method member is not rpc-internal method
 	if strings.HasPrefix(strings.ToLower(name), "rpc.") {
@@ -45,7 +45,7 @@ func (s *Service) Call(name string, params json.RawMessage) (interface{}, *Error
 		}
 	}
 
-	return method.Method(params)
+	return method.Method(data)
 }
 
 // Do parses the JSON request body and returns response object
@@ -53,8 +53,8 @@ func (s *Service) Do(w http.ResponseWriter, r *http.Request) *ResponseObject {
 
 	var errObj *ErrorObject
 
-	reqObj := new(RequestObject)
-	respObj := new(ResponseObject)
+	reqObj := new(RequestObject)   // &RequestObject{}
+	respObj := new(ResponseObject) // &ResponseObject{}
 
 	// set JSON-RPC response version
 	respObj.Jsonrpc = JSONRPCVersion
@@ -212,8 +212,13 @@ func (s *Service) Do(w http.ResponseWriter, r *http.Request) *ResponseObject {
 		respObj.IsNotification = true
 	}
 
+	// prepare parameters object for named method
+	paramsObj := ParametersObject{
+		Params: reqObj.Params,
+	}
+
 	// invoke named method with the provided parameters
-	respObj.Result, errObj = s.Call(reqObj.Method, reqObj.Params)
+	respObj.Result, errObj = s.Call(reqObj.Method, paramsObj)
 	if errObj != nil {
 		respObj.Error = errObj
 

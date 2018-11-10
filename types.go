@@ -46,10 +46,15 @@ type ResponseObject struct {
 	HTTPResponseStatusCode int `json:"-"`
 }
 
+// ParametersObject represents input data for JSON-RPC 2.0 method.
+type ParametersObject struct {
+	Params json.RawMessage
+}
+
 // Method represents an JSON-RPC 2.0 method.
 type Method struct {
 	// Method is the callable function
-	Method func(params json.RawMessage) (interface{}, *ErrorObject)
+	Method func(ParametersObject) (interface{}, *ErrorObject)
 }
 
 // Service represents a JSON-RPC 2.0 capable HTTP server
