@@ -18,13 +18,8 @@ import (
 const endpoint = "jrpc"
 const port = "31500"
 
-var id, x, y int
-var r *strings.Replacer
-
-type SubtractParams struct {
-	X *float64 `json:"X"`
-	Y *float64 `json:"Y"`
-}
+var id, x, y int        // nolint:gochecknoglobals
+var r *strings.Replacer // nolint:gochecknoglobals
 
 type Result struct {
 	Jsonrpc string       `json:"jsonrpc"`
@@ -33,11 +28,33 @@ type Result struct {
 	ID      interface{}  `json:"id"`
 }
 
-func Subtract(paramsRaw json.RawMessage) (interface{}, *ErrorObject) {
+type CopyParamsDataResponse struct {
+	IDString string          `json:"IDString"`
+	Method   string          `json:"Method"`
+	Params   json.RawMessage `json:"Params"`
+}
+
+type SubtractParams struct {
+	X *float64 `json:"X"`
+	Y *float64 `json:"Y"`
+}
+
+func CopyParamsData(data ParametersObject) (interface{}, *ErrorObject) {
+
+	var out CopyParamsDataResponse
+
+	out.IDString = data.IDString
+	out.Method = data.Method
+	out.Params = data.Params
+
+	return out, nil
+}
+
+func Subtract(data ParametersObject) (interface{}, *ErrorObject) {
 
 	paramObj := new(SubtractParams)
 
-	err := json.Unmarshal(paramsRaw, paramObj)
+	err := json.Unmarshal(data.Params, paramObj)
 	if err != nil {
 
 		errObj := &ErrorObject{
@@ -46,14 +63,14 @@ func Subtract(paramsRaw json.RawMessage) (interface{}, *ErrorObject) {
 			Data:    err.Error(),
 		}
 
-		switch err.(type) {
+		switch v := err.(type) {
 		case *json.UnmarshalTypeError:
-			switch err.(*json.UnmarshalTypeError).Value {
+			switch v.Value {
 			case "array":
 
 				var params []float64
 
-				params, errObj = GetPositionalFloat64Params(paramsRaw)
+				params, errObj = GetPositionalFloat64Params(data)
 				if errObj != nil {
 					return nil, errObj
 				}
@@ -123,7 +140,8 @@ func init() {
 			},
 		)
 
-		s.Register("update", Method{Method: func(params json.RawMessage) (interface{}, *ErrorObject) { return nil, nil }})
+		s.Register("update", Method{Method: func(data ParametersObject) (interface{}, *ErrorObject) { return nil, nil }})
+		s.Register("copy", Method{Method: CopyParamsData})
 		s.Register("subtract", Method{Method: Subtract})
 
 		s.Start()
@@ -152,7 +170,7 @@ func httpPost(url, request string, headers map[string]string) (*http.Response, e
 	buf := bytes.NewBuffer([]byte(r.Replace(request)))
 
 	// prepare default http client config
-	client := &http.Client{}
+	client := new(http.Client) // &http.Client{}
 
 	// set request type to POST
 	req, err := http.NewRequest("POST", url, buf)
@@ -189,9 +207,8 @@ func TestNonPOSTRequestType(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusMethodNotAllowed {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusMethodNotAllowed)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusMethodNotAllowed)
 	}
-
 	if v := resp.Header.Get("Allow"); v != "POST" {
 		t.Fatal("got unexpected Server value")
 	}
@@ -205,19 +222,19 @@ func TestNonPOSTRequestType(t *testing.T) {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
 	if result.ID != nil {
-		t.Fatal("expected ID to be nil")
+		t.Fatal("expected ID to be 'nil'")
 	}
 	if result.Result != nil {
-		t.Fatal("expected result to be nil")
+		t.Fatal("expected Result to be 'nil'")
 	}
 	if result.Error == nil {
-		t.Fatal("expected error to be not nil")
+		t.Fatal("expected Error to be not 'nil'")
 	}
 	if result.Error.Code != InvalidRequestCode {
-		t.Fatalf("expected error code to be %d", InvalidRequestCode)
+		t.Fatalf("expected Error Code to be '%d'", InvalidRequestCode)
 	}
 	if result.Error.Message != InvalidRequestMessage {
-		t.Fatalf("expected error message to be '%s'", InvalidRequestMessage)
+		t.Fatalf("expected Error Message to be '%s'", InvalidRequestMessage)
 	}
 }
 
@@ -247,7 +264,7 @@ func TestRequestHeaderWrongContentType(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusUnsupportedMediaType {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusUnsupportedMediaType)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusUnsupportedMediaType)
 	}
 
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -259,19 +276,19 @@ func TestRequestHeaderWrongContentType(t *testing.T) {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
 	if result.ID != nil {
-		t.Fatal("expected ID to be nil")
+		t.Fatal("expected ID to be 'nil'")
 	}
 	if result.Result != nil {
-		t.Fatal("expected result to be nil")
+		t.Fatal("expected Result to be 'nil'")
 	}
 	if result.Error == nil {
-		t.Fatal("expected error to be not nil")
+		t.Fatal("expected Error to be not 'nil'")
 	}
 	if result.Error.Code != ParseErrorCode {
-		t.Fatalf("expected error code to be %d", ParseErrorCode)
+		t.Fatalf("expected Error Code to be '%d'", ParseErrorCode)
 	}
 	if result.Error.Message != ParseErrorMessage {
-		t.Fatalf("expected error message to be '%s'", ParseErrorMessage)
+		t.Fatalf("expected Error Message to be '%s'", ParseErrorMessage)
 	}
 }
 
@@ -301,7 +318,7 @@ func TestRequestHeaderWrongAccept(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusNotAcceptable {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusNotAcceptable)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusNotAcceptable)
 	}
 
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -313,19 +330,19 @@ func TestRequestHeaderWrongAccept(t *testing.T) {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
 	if result.ID != nil {
-		t.Fatal("expected ID to be nil")
+		t.Fatal("expected ID to be 'nil'")
 	}
 	if result.Result != nil {
-		t.Fatal("expected result to be nil")
+		t.Fatal("expected Result to be 'nil'")
 	}
 	if result.Error == nil {
-		t.Fatal("expected error to be not nil")
+		t.Fatal("expected Error to be not 'nil'")
 	}
 	if result.Error.Code != ParseErrorCode {
-		t.Fatalf("expected error code to be %d", ParseErrorCode)
+		t.Fatalf("expected Error Code to be '%d'", ParseErrorCode)
 	}
 	if result.Error.Message != ParseErrorMessage {
-		t.Fatalf("expected error message to be '%s'", ParseErrorMessage)
+		t.Fatalf("expected Error Message to be '%s'", ParseErrorMessage)
 	}
 }
 
@@ -344,9 +361,8 @@ func TestResponseHeaders(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusOK)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
-
 	if v := resp.Header.Get("Server"); v != "JSON-RPC/2.0 (Golang)" {
 		t.Fatal("got unexpected Server value")
 	}
@@ -368,7 +384,7 @@ func TestIDStringType(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusOK)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
 
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -379,14 +395,14 @@ func TestIDStringType(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
-	if result.ID.(string) != "ID:42" {
-		t.Fatal("expected ID to be ID:42")
+	if val, ok := result.ID.(string); !ok || val != "ID:42" {
+		t.Fatal("expected ID to be 'ID:42'")
 	}
 	if result.Error != nil {
-		t.Fatal("expected error to be nil")
+		t.Fatal("expected Error to be 'nil'")
 	}
 	if result.Result != nil {
-		t.Fatal("expected result to be nil")
+		t.Fatal("expected Result to be 'nil'")
 	}
 }
 
@@ -407,7 +423,7 @@ func TestIDNumberType(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusOK)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
 
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -418,14 +434,65 @@ func TestIDNumberType(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
-	if result.ID.(float64) != float64(42) {
-		t.Fatal("expected ID to be 42")
+	if val, ok := result.ID.(float64); !ok || val != float64(42) {
+		t.Fatal("expected ID to be '42'")
 	}
 	if result.Error != nil {
-		t.Fatal("expected error to be nil")
+		t.Fatal("expected Error to be 'nil'")
 	}
 	if result.Result != nil {
-		t.Fatal("expected result to be nil")
+		t.Fatal("expected Result to be 'nil'")
+	}
+}
+
+func TestInternalParamsPassthrough(t *testing.T) {
+
+	var result Result
+
+	resp, err := sendTestRequest(`{"jsonrpc": "2.0", "method": "copy", "params": 42, "id": 42}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		err = resp.Body.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
+	}
+
+	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.Jsonrpc != JSONRPCVersion {
+		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
+	}
+	if val, ok := result.ID.(float64); !ok || val != float64(42) {
+		t.Fatal("expected ID to be '42'")
+	}
+	if result.Error != nil {
+		t.Fatal("expected Error to be 'nil'")
+	}
+	if result.Result == nil {
+		t.Fatal("expected Result to be not 'nil'")
+	}
+	if _, ok := result.Result.(map[string]interface{}); !ok {
+		t.Fatal("expected Result type to be 'map[string]interface{}'")
+	}
+	if val, ok := result.Result.(map[string]interface{})["IDString"].(string); !ok || val != "42" {
+		t.Fatal("expected IDString to be '42'")
+	}
+	if val, ok := result.Result.(map[string]interface{})["Method"].(string); !ok || val != "copy" {
+		t.Fatal("expected Method to be 'copy'")
+	}
+	if val, ok := result.Result.(map[string]interface{})["Params"].(float64); !ok || val != float64(42) {
+		t.Fatal("expected Params to be '42'")
 	}
 }
 
@@ -456,7 +523,7 @@ func TestIDTypeError(t *testing.T) {
 		}()
 
 		if resp.StatusCode != http.StatusOK {
-			t.Fatalf("expected HTTP status code to be %d", http.StatusOK)
+			t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 		}
 
 		err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -468,19 +535,19 @@ func TestIDTypeError(t *testing.T) {
 			t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 		}
 		if result.ID != nil {
-			t.Fatal("expected ID to be nil")
+			t.Fatal("expected ID to be 'nil'")
 		}
 		if result.Result != nil {
-			t.Fatal("expected result to be nil")
+			t.Fatal("expected Result to be 'nil'")
 		}
 		if result.Error == nil {
-			t.Fatal("expected error to be not nil")
+			t.Fatal("expected Error to be not 'nil'")
 		}
 		if result.Error.Code != InvalidIDCode {
-			t.Fatalf("expected error code to be %d", InvalidIDCode)
+			t.Fatalf("expected Error Code to be '%d'", InvalidIDCode)
 		}
 		if result.Error.Message != InvalidIDMessage {
-			t.Fatalf("expected error message to be '%s'", InvalidIDMessage)
+			t.Fatalf("expected Error Message to be '%s'", InvalidIDMessage)
 		}
 	}
 }
@@ -501,7 +568,7 @@ func TestNonExistentMethod(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusOK)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
 
 	_ = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -509,20 +576,20 @@ func TestNonExistentMethod(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
-	if result.ID.(float64) != float64(id) {
-		t.Fatalf("expected ID to be %d", id)
+	if val, ok := result.ID.(float64); !ok || val != float64(id) {
+		t.Fatalf("expected ID to be '%d'", id)
 	}
 	if result.Result != nil {
-		t.Fatal("expected result to be nil")
+		t.Fatal("expected Result to be 'nil'")
 	}
 	if result.Error == nil {
-		t.Fatal("expected error to be not nil")
+		t.Fatal("expected Error to be not 'nil'")
 	}
 	if result.Error.Code != MethodNotFoundCode {
-		t.Fatalf("expected error code to be %d", MethodNotFoundCode)
+		t.Fatalf("expected Error Code to be '%d'", MethodNotFoundCode)
 	}
 	if result.Error.Message != MethodNotFoundMessage {
-		t.Fatalf("expected error message to be '%s'", MethodNotFoundMessage)
+		t.Fatalf("expected Error Message to be '%s'", MethodNotFoundMessage)
 	}
 }
 
@@ -543,7 +610,7 @@ func TestInvalidMethodObjectType(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusOK)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
 
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -555,19 +622,19 @@ func TestInvalidMethodObjectType(t *testing.T) {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
 	if result.ID != nil {
-		t.Fatal("expected ID to be nil")
+		t.Fatal("expected ID to be 'nil'")
 	}
 	if result.Result != nil {
-		t.Fatal("expected result to be nil")
+		t.Fatal("expected Result to be 'nil'")
 	}
 	if result.Error == nil {
-		t.Fatal("expected error to be not nil")
+		t.Fatal("expected Error to be not 'nil'")
 	}
 	if result.Error.Code != InvalidMethodCode {
-		t.Fatalf("expected error code to be %d", InvalidMethodCode)
+		t.Fatalf("expected Error Code to be '%d'", InvalidMethodCode)
 	}
 	if result.Error.Message != InvalidMethodMessage {
-		t.Fatalf("expected error message to be '%s'", InvalidMethodMessage)
+		t.Fatalf("expected Error Message to be '%s'", InvalidMethodMessage)
 	}
 }
 func TestNamedParameters(t *testing.T) {
@@ -587,7 +654,7 @@ func TestNamedParameters(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusOK)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
 
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -598,17 +665,17 @@ func TestNamedParameters(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
-	if result.ID.(float64) != float64(id) {
-		t.Fatalf("expected ID to be %d", id)
+	if val, ok := result.ID.(float64); !ok || val != float64(id) {
+		t.Fatalf("expected ID to be '%d'", id)
 	}
 	if result.Error != nil {
-		t.Fatal("expected error to be nil")
+		t.Fatal("expected Error to be 'nil'")
 	}
 	if result.Result == nil {
-		t.Fatal("expected result to be not nil")
+		t.Fatal("expected Result to be not 'nil'")
 	}
 	if result.Result.(float64) != float64(x-y) {
-		t.Fatalf("expected result to be %f", float64(x-y))
+		t.Fatalf("expected Result to be '%f'", float64(x-y))
 	}
 }
 func TestNotification(t *testing.T) {
@@ -634,7 +701,7 @@ func TestNotification(t *testing.T) {
 		}()
 
 		if resp.StatusCode != http.StatusNoContent {
-			t.Fatalf("expected HTTP status code to be %d", http.StatusNoContent)
+			t.Fatalf("expected HTTP status code to be '%d'", http.StatusNoContent)
 		}
 
 		err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -666,7 +733,7 @@ func TestBatchNotifications(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusOK)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
 
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -678,19 +745,19 @@ func TestBatchNotifications(t *testing.T) {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
 	if result.ID != nil {
-		t.Fatal("expected ID to be nil")
+		t.Fatal("expected ID to be 'nil'")
 	}
 	if result.Result != nil {
-		t.Fatalf("expected result to be nil")
+		t.Fatalf("expected Result to be 'nil'")
 	}
 	if result.Error == nil {
-		t.Fatal("expected error to be not nil")
+		t.Fatal("expected Error to be not 'nil'")
 	}
 	if result.Error.Code != NotImplementedCode {
-		t.Fatalf("expected error code to be %d", NotImplementedCode)
+		t.Fatalf("expected Error Code to be '%d'", NotImplementedCode)
 	}
 	if result.Error.Message != NotImplementedMessage {
-		t.Fatalf("expected error message to be '%s'", NotImplementedMessage)
+		t.Fatalf("expected Error Message to be '%s'", NotImplementedMessage)
 	}
 }
 func TestPositionalParamters(t *testing.T) {
@@ -710,7 +777,7 @@ func TestPositionalParamters(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusOK)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
 
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -721,17 +788,17 @@ func TestPositionalParamters(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
-	if result.ID.(float64) != float64(id) {
-		t.Fatalf("expected ID to be %d", id)
+	if val, ok := result.ID.(float64); !ok || val != float64(id) {
+		t.Fatalf("expected ID to be '%d'", id)
 	}
 	if result.Error != nil {
-		t.Fatal("expected error to be nil")
+		t.Fatal("expected Error to be 'nil'")
 	}
 	if result.Result == nil {
-		t.Fatal("expected result to be not nil")
+		t.Fatal("expected Result to be not 'nil'")
 	}
 	if result.Result.(float64) != float64(x-y) {
-		t.Fatalf("expected result to be %f", float64(x-y))
+		t.Fatalf("expected Result to be '%f'", float64(x-y))
 	}
 }
 
@@ -752,7 +819,7 @@ func TestPositionalParamtersError(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusOK)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
 
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -763,17 +830,17 @@ func TestPositionalParamtersError(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
-	if result.ID.(float64) != float64(id) {
-		t.Fatalf("expected ID to be %d", id)
+	if val, ok := result.ID.(float64); !ok || val != float64(id) {
+		t.Fatalf("expected ID to be '%d'", id)
 	}
 	if result.Result != nil {
-		t.Fatal("expected result to be nil")
+		t.Fatal("expected Result to be 'nil'")
 	}
 	if result.Error == nil {
-		t.Fatal("expected error to be not nil")
+		t.Fatal("expected Error to be not 'nil'")
 	}
 	if result.Error.Code != -320099 {
-		t.Fatal("expected code to be -320099")
+		t.Fatal("expected code to be '-320099'")
 	}
 	if result.Error.Message != "Custom error" {
 		t.Fatal("expected message to be 'Custom error'")
@@ -799,7 +866,7 @@ func TestInvalidJSON(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusOK)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
 
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -811,19 +878,19 @@ func TestInvalidJSON(t *testing.T) {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
 	if result.ID != nil {
-		t.Fatal("expected ID to be nil")
+		t.Fatal("expected ID to be 'nil'")
 	}
 	if result.Result != nil {
-		t.Fatal("expected result to be nil")
+		t.Fatal("expected Result to be 'nil'")
 	}
 	if result.Error == nil {
-		t.Fatal("expected error to be not nil")
+		t.Fatal("expected Error to be not 'nil'")
 	}
 	if result.Error.Code != ParseErrorCode {
-		t.Fatalf("expected error code to be %d", ParseErrorCode)
+		t.Fatalf("expected Error Code to be '%d'", ParseErrorCode)
 	}
 	if result.Error.Message != ParseErrorMessage {
-		t.Fatalf("expected error message to be '%s'", ParseErrorMessage)
+		t.Fatalf("expected Error Message to be '%s'", ParseErrorMessage)
 	}
 }
 
@@ -849,7 +916,7 @@ func TestBatchInvalidJSON(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusOK)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
 
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -861,19 +928,19 @@ func TestBatchInvalidJSON(t *testing.T) {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
 	if result.ID != nil {
-		t.Fatal("expected ID to be nil")
+		t.Fatal("expected ID to be 'nil'")
 	}
 	if result.Result != nil {
-		t.Fatal("expected result to be nil")
+		t.Fatal("expected Result to be 'nil'")
 	}
 	if result.Error == nil {
-		t.Fatal("expected error to be not nil")
+		t.Fatal("expected Error to be not 'nil'")
 	}
 	if result.Error.Code != ParseErrorCode {
-		t.Fatalf("expected error code to be %d", ParseErrorCode)
+		t.Fatalf("expected Error Code to be '%d'", ParseErrorCode)
 	}
 	if result.Error.Message != ParseErrorMessage {
-		t.Fatalf("expected error message to be '%s'", ParseErrorMessage)
+		t.Fatalf("expected Error Message to be '%s'", ParseErrorMessage)
 	}
 }
 
@@ -894,7 +961,7 @@ func TestBatchEmptyArray(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusOK)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
 
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -906,19 +973,19 @@ func TestBatchEmptyArray(t *testing.T) {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
 	if result.ID != nil {
-		t.Fatal("expected ID to be nil")
+		t.Fatal("expected ID to be 'nil'")
 	}
 	if result.Result != nil {
-		t.Fatalf("Expected result to be nil")
+		t.Fatalf("expected Result to be 'nil'")
 	}
 	if result.Error == nil {
-		t.Fatal("expected error to be not nil")
+		t.Fatal("expected Error to be not 'nil'")
 	}
 	if result.Error.Code != NotImplementedCode {
-		t.Fatalf("expected error code to be %d", NotImplementedCode)
+		t.Fatalf("expected Error Code to be '%d'", NotImplementedCode)
 	}
 	if result.Error.Message != NotImplementedMessage {
-		t.Fatalf("expected error message to be '%s'", NotImplementedMessage)
+		t.Fatalf("expected Error Message to be '%s'", NotImplementedMessage)
 	}
 	if result.Error.Data != "batch requests not supported" {
 		t.Fatal("expected data to be 'batch requests not supported'")
@@ -942,7 +1009,7 @@ func TestInvalidBatch(t *testing.T) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected HTTP status code to be %d", http.StatusOK)
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
 
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&results)
