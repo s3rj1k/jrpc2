@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"math"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -46,6 +47,50 @@ func (s *Service) Call(name string, data ParametersObject) (interface{}, *ErrorO
 	}
 
 	return method.Method(data)
+}
+
+// ConvertIDtoString converts ID parameter to string, also validates ID data type
+func ConvertIDtoString(id *json.RawMessage) (string, *ErrorObject) {
+
+	// id can be undefined (notification)
+	if id == nil {
+		return "", nil
+	}
+
+	var idObj interface{}
+
+	// decoding id to object
+	err := json.Unmarshal(*id, &idObj)
+	if err != nil {
+		return "", &ErrorObject{
+			Code:    InvalidIDCode,
+			Message: InvalidIDMessage,
+			Data:    err.Error(),
+		}
+	}
+
+	// checking allowed data types
+	switch v := idObj.(type) {
+	case float64: // json package will assume float64 data type when you Unmarshal into an interface{}
+		if math.Trunc(v) != v { // truncate non integer part from float64
+			return "", &ErrorObject{
+				Code:    InvalidIDCode,
+				Message: InvalidIDMessage,
+				Data:    "ID must be one of string, number or undefined",
+			}
+		}
+		return strconv.FormatFloat(v, 'f', 0, 64), nil // convert number to string
+	case string:
+		return v, nil
+	case nil:
+		return "", nil
+	default: // other data types
+		return "", &ErrorObject{
+			Code:    InvalidIDCode,
+			Message: InvalidIDMessage,
+			Data:    "ID must be one of string, number or undefined",
+		}
+	}
 }
 
 // Do parses the JSON request body and returns response object
@@ -179,32 +224,16 @@ func (s *Service) Do(w http.ResponseWriter, r *http.Request) *ResponseObject {
 		return respObj
 	}
 
-	switch reqObj.ID.(type) {
-	case float64: // json package will assume float64 data type when you Unmarshal into an interface{}
-		// truncate non integer part from float64
-		if math.Trunc(reqObj.ID.(float64)) != reqObj.ID.(float64) {
-			respObj.Error = &ErrorObject{
-				Code:    InvalidIDCode,
-				Message: InvalidIDMessage,
-				Data:    "ID must be one of string, number or undefined",
-			}
-			return respObj
-		}
-	case string:
-		// nothing to do here
-	case nil:
-		// nothing to do here
-	default:
-		respObj.Error = &ErrorObject{
-			Code:    InvalidIDCode,
-			Message: InvalidIDMessage,
-			Data:    "ID must be one of string, number or undefined",
-		}
+	// parse ID member
+	idStr, errObj := ConvertIDtoString(reqObj.ID)
+	if errObj != nil {
+		respObj.Error = errObj
+
 		return respObj
 	}
 
 	// set response ID
-	respObj.ID = &reqObj.ID
+	respObj.ID = reqObj.ID
 
 	// set notification flag
 	if reqObj.ID == nil {
@@ -214,7 +243,9 @@ func (s *Service) Do(w http.ResponseWriter, r *http.Request) *ResponseObject {
 
 	// prepare parameters object for named method
 	paramsObj := ParametersObject{
-		Params: reqObj.Params,
+		IDString: idStr,
+		Method:   reqObj.Method,
+		Params:   reqObj.Params,
 	}
 
 	// invoke named method with the provided parameters

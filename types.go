@@ -22,9 +22,9 @@ type RequestObject struct {
 	Method string `json:"method"`
 	// Params holds Raw JSON parameter data to be used during the invocation of the method
 	Params json.RawMessage `json:"params"`
-
 	// ID is a unique identifier established by the client
-	ID interface{} `json:"id,omitempty"`
+	ID *json.RawMessage `json:"id,omitempty"`
+
 	// IsNotification specifies that this request is of Notification type (internal helper)
 	IsNotification bool `json:"-"`
 }
@@ -37,9 +37,9 @@ type ResponseObject struct {
 	Error *ErrorObject `json:"error,omitempty"`
 	// Result contains the result of the called method
 	Result interface{} `json:"result,omitempty"`
-
 	// ID contains the client established request id or null
-	ID interface{} `json:"id,omitempty"`
+	ID *json.RawMessage `json:"id,omitempty"`
+
 	// IsNotification specifies that this response is of Notification type (internal helper)
 	IsNotification bool `json:"-"`
 	// HTTPResponseStatusCode specifies http response code to be set by server
@@ -48,6 +48,11 @@ type ResponseObject struct {
 
 // ParametersObject represents input data for JSON-RPC 2.0 method.
 type ParametersObject struct {
+	// IDString contains request ID as string data type
+	IDString string
+	// Method contains the name of the method to be invoked
+	Method string
+	// Params contains raw json params data
 	Params json.RawMessage
 }
 
