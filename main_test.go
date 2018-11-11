@@ -63,9 +63,9 @@ func Subtract(data ParametersObject) (interface{}, *ErrorObject) {
 			Data:    err.Error(),
 		}
 
-		switch err.(type) {
+		switch v := err.(type) {
 		case *json.UnmarshalTypeError:
-			switch err.(*json.UnmarshalTypeError).Value {
+			switch v.Value {
 			case "array":
 
 				var params []float64
@@ -170,7 +170,7 @@ func httpPost(url, request string, headers map[string]string) (*http.Response, e
 	buf := bytes.NewBuffer([]byte(r.Replace(request)))
 
 	// prepare default http client config
-	client := &http.Client{}
+	client := new(http.Client) // &http.Client{}
 
 	// set request type to POST
 	req, err := http.NewRequest("POST", url, buf)

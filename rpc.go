@@ -181,15 +181,12 @@ func (s *Service) Do(w http.ResponseWriter, r *http.Request) *ResponseObject {
 			Message: ParseErrorMessage,
 			Data:    err.Error(),
 		}
-
 		// additional error parsing
-		switch err.(type) {
+		switch v := err.(type) {
 		// wrong data type data in request
 		case *json.UnmarshalTypeError:
-			// description of JSON value - "bool", "array", "number -5"
-			switch err.(*json.UnmarshalTypeError).Value {
 			// array data, batch request
-			case "array":
+			if v.Value == "array" {
 				respObj.Error = &ErrorObject{
 					Code:    NotImplementedCode,
 					Message: NotImplementedMessage,
@@ -197,10 +194,8 @@ func (s *Service) Do(w http.ResponseWriter, r *http.Request) *ResponseObject {
 				}
 				return respObj
 			}
-			// name of the field holding the Go value
-			switch err.(*json.UnmarshalTypeError).Field {
 			// invalid data type for method
-			case "method":
+			if v.Field == "method" { // name of the field holding the Go value
 				respObj.Error = &ErrorObject{
 					Code:    InvalidMethodCode,
 					Message: InvalidMethodMessage,
@@ -208,9 +203,11 @@ func (s *Service) Do(w http.ResponseWriter, r *http.Request) *ResponseObject {
 				}
 				return respObj
 			}
+			// other data type error
+			return respObj
+		default: // other error
+			return respObj
 		}
-
-		return respObj
 	}
 
 	// validate JSON-RPC 2.0 request version member

@@ -1,6 +1,8 @@
 package jrpc2
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 // GetPositionalFloat64Params parses positional param member of JSON-RPC 2.0 request
 // that is know to contain float64 array
