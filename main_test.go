@@ -18,8 +18,8 @@ import (
 const endpoint = "jrpc"
 const port = "31500"
 
-var id, x, y int
-var r *strings.Replacer
+var id, x, y int        // nolint:gochecknoglobals
+var r *strings.Replacer // nolint:gochecknoglobals
 
 type Result struct {
 	Jsonrpc string       `json:"jsonrpc"`
