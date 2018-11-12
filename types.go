@@ -24,9 +24,6 @@ type RequestObject struct {
 	Params json.RawMessage `json:"params"`
 	// ID is a unique identifier established by the client
 	ID *json.RawMessage `json:"id,omitempty"`
-
-	// IsNotification specifies that this request is of Notification type (internal helper)
-	IsNotification bool `json:"-"`
 }
 
 // ResponseObject represents a response object
@@ -44,6 +41,8 @@ type ResponseObject struct {
 	IsNotification bool `json:"-"`
 	// HTTPResponseStatusCode specifies http response code to be set by server
 	HTTPResponseStatusCode int `json:"-"`
+	// Headers contains response headers
+	Headers map[string]string `json:"-"`
 }
 
 // ParametersObject represents input data for JSON-RPC 2.0 method.
@@ -70,6 +69,6 @@ type Service struct {
 	Route string
 	// Methods contains the mapping of registered methods
 	Methods map[string]Method
-	// Headers contains response headers
+	// Headers contains custom response headers
 	Headers map[string]string
 }
