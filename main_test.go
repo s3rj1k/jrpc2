@@ -210,7 +210,7 @@ func TestNonPOSTRequestType(t *testing.T) {
 		t.Fatalf("expected HTTP status code to be '%d'", http.StatusMethodNotAllowed)
 	}
 	if v := resp.Header.Get("Allow"); v != "POST" {
-		t.Fatal("got unexpected Server value")
+		t.Fatal("expected Allow header to be 'POST'")
 	}
 
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -360,8 +360,8 @@ func TestResponseHeaders(t *testing.T) {
 		}
 	}()
 
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
+	if resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusNoContent)
 	}
 	if v := resp.Header.Get("Server"); v != "JSON-RPC/2.0 (Golang)" {
 		t.Fatal("got unexpected Server value")

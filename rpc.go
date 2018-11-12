@@ -93,88 +93,149 @@ func ConvertIDtoString(id *json.RawMessage) (string, *ErrorObject) {
 	}
 }
 
-// Do parses the JSON request body and returns response object
-func (s *Service) Do(w http.ResponseWriter, r *http.Request) *ResponseObject {
+// ValidateHTTPRequestMethod validates HTTP request method
+func (responseObject *ResponseObject) ValidateHTTPRequestMethod(r *http.Request) bool {
 
-	var errObj *ErrorObject
-
-	reqObj := new(RequestObject)   // &RequestObject{}
-	respObj := new(ResponseObject) // &ResponseObject{}
-
-	// set JSON-RPC response version
-	respObj.Jsonrpc = JSONRPCVersion
-
-	// set custom response headers
-	for header, value := range s.Headers {
-		w.Header().Set(header, value)
-	}
-
-	// set Response Content-Type header
-	w.Header().Set("Content-Type", "application/json")
-
-	// set default response status code
-	respObj.HTTPResponseStatusCode = http.StatusOK
+	const PostMethodName = "POST"
 
 	// check request Method
-	if r.Method != "POST" {
-		respObj.Error = &ErrorObject{
+	if r.Method != PostMethodName {
+		responseObject.Error = &ErrorObject{
 			Code:    InvalidRequestCode,
 			Message: InvalidRequestMessage,
 			Data:    "request method must be of POST type",
 		}
 
 		// set Response status code to 405 (method not allowed)
-		respObj.HTTPResponseStatusCode = http.StatusMethodNotAllowed
+		responseObject.HTTPResponseStatusCode = http.StatusMethodNotAllowed
 
 		// set Allow header
-		w.Header().Set("Allow", "POST")
+		responseObject.Headers["Allow"] = PostMethodName
 
-		return respObj
+		return false
 	}
+
+	return true
+}
+
+// ValidateHTTPRequestHeaders validates HTTP request headers
+func (responseObject *ResponseObject) ValidateHTTPRequestHeaders(r *http.Request) bool {
 
 	// check request Content-Type header
 	if !strings.EqualFold(r.Header.Get("Content-Type"), "application/json") {
-		respObj.Error = &ErrorObject{
+		responseObject.Error = &ErrorObject{
 			Code:    ParseErrorCode,
 			Message: ParseErrorMessage,
 			Data:    "Content-Type header must be set to 'application/json'",
 		}
 
 		// set Response status code to 415 (unsupported media type)
-		respObj.HTTPResponseStatusCode = http.StatusUnsupportedMediaType
+		responseObject.HTTPResponseStatusCode = http.StatusUnsupportedMediaType
 
-		return respObj
+		return false
 	}
 
 	// check request Accept header
 	if !strings.EqualFold(r.Header.Get("Accept"), "application/json") {
-		respObj.Error = &ErrorObject{
+		responseObject.Error = &ErrorObject{
 			Code:    ParseErrorCode,
 			Message: ParseErrorMessage,
 			Data:    "Accept header must be set to 'application/json'",
 		}
 
 		// set Response status code to 406 (not acceptable)
-		respObj.HTTPResponseStatusCode = http.StatusNotAcceptable
+		responseObject.HTTPResponseStatusCode = http.StatusNotAcceptable
 
-		return respObj
+		return false
 	}
 
-	// read request body
+	return true
+}
+
+// ValidateJSONRPCVersionNumber validates JSON-RPC 2.0 request version member
+func (responseObject *ResponseObject) ValidateJSONRPCVersionNumber() bool {
+
+	// validate JSON-RPC 2.0 request version member
+	if responseObject.Jsonrpc != JSONRPCVersion {
+		responseObject.Error = &ErrorObject{
+			Code:    InvalidRequestCode,
+			Message: InvalidRequestMessage,
+			Data:    fmt.Sprintf("jsonrpc request member must be exactly '%s'", JSONRPCVersion),
+		}
+
+		return false
+	}
+
+	return true
+}
+
+// ReadRequestData reads HTTP request data to bytes array
+func ReadRequestData(r *http.Request) ([]byte, *ErrorObject) {
+
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		respObj.Error = &ErrorObject{
+		return nil, &ErrorObject{
 			Code:    ParseErrorCode,
 			Message: ParseErrorMessage,
 			Data:    err.Error(),
 		}
+	}
+
+	return data, nil
+}
+
+// DefaultResponseObject initializes default response object
+func DefaultResponseObject() *ResponseObject {
+
+	respObj := new(ResponseObject) // &ResponseObject{}
+
+	// set JSON-RPC response version
+	respObj.Jsonrpc = JSONRPCVersion
+
+	// set default response status code
+	respObj.HTTPResponseStatusCode = http.StatusOK
+
+	// init headers map
+	respObj.Headers = make(map[string]string)
+
+	// set response Content-Type header
+	respObj.Headers["Content-Type"] = "application/json"
+
+	return respObj
+}
+
+// Do parses the JSON request body and returns response object
+func (s *Service) Do(r *http.Request) *ResponseObject {
+
+	// create empty error object
+	var errObj *ErrorObject
+
+	// create default response object
+	respObj := DefaultResponseObject()
+
+	// check request Method
+	if ok := respObj.ValidateHTTPRequestMethod(r); !ok {
+		return respObj
+	}
+
+	// check request headers
+	if ok := respObj.ValidateHTTPRequestHeaders(r); !ok {
+		return respObj
+	}
+
+	// read request body
+	data, errObj := ReadRequestData(r)
+	if errObj != nil {
+		respObj.Error = errObj
 
 		return respObj
 	}
 
+	// create placeholder for request object
+	reqObj := new(RequestObject) // &RequestObject{}
+
 	// decode request body
-	err = json.Unmarshal(data, &reqObj)
-	if err != nil {
+	if err := json.Unmarshal(data, &reqObj); err != nil {
 		// prepare default error object
 		respObj.Error = &ErrorObject{
 			Code:    ParseErrorCode,
@@ -211,13 +272,7 @@ func (s *Service) Do(w http.ResponseWriter, r *http.Request) *ResponseObject {
 	}
 
 	// validate JSON-RPC 2.0 request version member
-	if reqObj.Jsonrpc != JSONRPCVersion {
-		respObj.Error = &ErrorObject{
-			Code:    InvalidRequestCode,
-			Message: InvalidRequestMessage,
-			Data:    fmt.Sprintf("jsonrpc request member must be exactly '%s'", JSONRPCVersion),
-		}
-
+	if ok := respObj.ValidateJSONRPCVersionNumber(); !ok {
 		return respObj
 	}
 
@@ -234,7 +289,6 @@ func (s *Service) Do(w http.ResponseWriter, r *http.Request) *ResponseObject {
 
 	// set notification flag
 	if reqObj.ID == nil {
-		reqObj.IsNotification = true
 		respObj.IsNotification = true
 	}
 
@@ -256,11 +310,49 @@ func (s *Service) Do(w http.ResponseWriter, r *http.Request) *ResponseObject {
 	return respObj
 }
 
+// InternalServerErrorJSONRPCMessage generates internal server error message as bytes array
+func InternalServerErrorJSONRPCMessage(message string) []byte {
+
+	if len(message) == 0 {
+		message = "critical error occurred"
+	}
+
+	str := fmt.Sprintf("{\"jsonrpc\":\"%s\",\"error\":{\"code\":%d,\"message\":\"%s\",\"data\":\"%s\"},\"id\":null}",
+		JSONRPCVersion,
+		InternalErrorCode,
+		InternalErrorMessage,
+		message,
+	)
+
+	return []byte(str)
+}
+
+// ResponseMarshal create a bytes encoded representation of a single response object
+func (responseObject *ResponseObject) ResponseMarshal() []byte {
+
+	b, err := json.Marshal(responseObject)
+	if err != nil {
+		return InternalServerErrorJSONRPCMessage(err.Error())
+	}
+
+	return b
+}
+
 // RPCHandler handles incoming RPC client requests, generates responses
 func (s *Service) RPCHandler(w http.ResponseWriter, r *http.Request) {
 
 	// get response struct
-	respObj := s.Do(w, r)
+	respObj := s.Do(r)
+
+	// set custom response headers
+	for header, value := range s.Headers {
+		w.Header().Set(header, value)
+	}
+
+	// set response headers
+	for header, value := range respObj.Headers {
+		w.Header().Set(header, value)
+	}
 
 	// notification does not send responses to client
 	if respObj.IsNotification {
@@ -269,17 +361,11 @@ func (s *Service) RPCHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// create a bytes encoded representation of a response struct
-	resp, err := json.Marshal(respObj)
-	if err != nil {
-		panic(err.Error())
-	}
-
 	// write response code to HTTP writer interface
 	w.WriteHeader(respObj.HTTPResponseStatusCode)
 
 	// write data to HTTP writer interface
-	_, err = w.Write(resp)
+	_, err := w.Write(respObj.ResponseMarshal())
 	if err != nil {
 		panic(err.Error())
 	}

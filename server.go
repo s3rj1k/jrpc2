@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// Create creates a new service instance
+// Create defines a new service instance
 func Create(host, route string, headers map[string]string) *Service {
 	return &Service{
 		Host:    host,
