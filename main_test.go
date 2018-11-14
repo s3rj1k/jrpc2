@@ -29,9 +29,15 @@ type Result struct {
 }
 
 type CopyParamsDataResponse struct {
-	IDString string          `json:"IDString"`
-	Method   string          `json:"Method"`
-	Params   json.RawMessage `json:"Params"`
+	IsNotification bool   `json:"IsNotification"`
+	IDString       string `json:"IDString"`
+
+	Method string `json:"Method"`
+
+	RemoteAddr string `json:"RemoteAddr"`
+	UserAgent  string `json:"UserAgent"`
+
+	Params json.RawMessage `json:"Params"`
 }
 
 type SubtractParams struct {
@@ -43,7 +49,10 @@ func CopyParamsData(data ParametersObject) (interface{}, *ErrorObject) {
 
 	var out CopyParamsDataResponse
 
+	out.RemoteAddr = data.RemoteAddr
+	out.UserAgent = data.UserAgent
 	out.IDString = data.IDString
+	out.IsNotification = data.IsNotification
 	out.Method = data.Method
 	out.Params = data.Params
 
@@ -346,6 +355,34 @@ func TestRequestHeaderWrongAccept(t *testing.T) {
 	}
 }
 
+func TestWrongEndpoint(t *testing.T) {
+
+	// wrong URL (404 response)
+	url := fmt.Sprintf("http://%s/foobar", net.JoinHostPort("localhost", port))
+
+	headers := map[string]string{
+		"Accept":       "application/json", // set Accept header
+		"Content-Type": "application/json", // set Content-Type header
+	}
+
+	// call wrapper
+	resp, err := httpPost(url, `{}`, headers)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		err = resp.Body.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusNotFound)
+	}
+}
+
 func TestResponseHeaders(t *testing.T) {
 
 	resp, err := sendTestRequest(`{}`)
@@ -485,8 +522,20 @@ func TestInternalParamsPassthrough(t *testing.T) {
 	if _, ok := result.Result.(map[string]interface{}); !ok {
 		t.Fatal("expected Result type to be 'map[string]interface{}'")
 	}
+	if val, ok := result.Result.(map[string]interface{})["RemoteAddr"].(string); !ok || !strings.Contains(val, "127.0.0.1:") {
+		t.Fatal("expected RemoteAddr to contain '127.0.0.1'")
+	}
+	if val, ok := result.Result.(map[string]interface{})["UserAgent"].(string); !ok || !strings.EqualFold(val, "Go-http-client/1.1") {
+		t.Fatal("expected UserAgent to be 'Go-http-client/1.1'")
+	}
 	if val, ok := result.Result.(map[string]interface{})["IDString"].(string); !ok || val != "42" {
 		t.Fatal("expected IDString to be '42'")
+	}
+	if val, ok := result.Result.(map[string]interface{})["IDString"].(string); !ok || val != "42" {
+		t.Fatal("expected IDString to be '42'")
+	}
+	if val, ok := result.Result.(map[string]interface{})["IsNotification"].(bool); !ok || val {
+		t.Fatal("expected IsNotification to be 'false'")
 	}
 	if val, ok := result.Result.(map[string]interface{})["Method"].(string); !ok || val != "copy" {
 		t.Fatal("expected Method to be 'copy'")

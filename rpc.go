@@ -16,81 +16,64 @@ import (
     - https://www.simple-is-better.org/json-rpc/transport_http.html
 */
 
-// Call invokes the named method with the provided parameters
-func (s *Service) Call(name string, data ParametersObject) (interface{}, *ErrorObject) {
+// InternalServerErrorJSONRPCMessage generates internal server error message as bytes array
+func InternalServerErrorJSONRPCMessage(message string) []byte {
 
-	// check that request method member is not rpc-internal method
-	if strings.HasPrefix(strings.ToLower(name), "rpc.") {
-		return nil, &ErrorObject{
-			Code:    InvalidRequestCode,
-			Message: InvalidRequestMessage,
-			Data:    "method cannot match the pattern rpc.*",
-		}
+	if len(message) == 0 {
+		message = "critical error occurred"
 	}
 
-	// lookup method inside methods map
-	method, ok := s.Methods[name]
-	if !ok {
-		return nil, &ErrorObject{
-			Code:    MethodNotFoundCode,
-			Message: MethodNotFoundMessage,
-		}
-	}
+	str := fmt.Sprintf("{\"jsonrpc\":\"%s\",\"error\":{\"code\":%d,\"message\":\"%s\",\"data\":\"%s\"},\"id\":null}",
+		JSONRPCVersion,
+		InternalErrorCode,
+		InternalErrorMessage,
+		message,
+	)
 
-	// noncallable named method
-	if method.Method == nil {
-		return nil, &ErrorObject{
-			Code:    InternalErrorCode,
-			Message: InternalErrorMessage,
-			Data:    "unable to call provided method",
-		}
-	}
-
-	return method.Method(data)
+	return []byte(str)
 }
 
-// ConvertIDtoString converts ID parameter to string, also validates ID data type
-func ConvertIDtoString(id *json.RawMessage) (string, *ErrorObject) {
+// DefaultResponseObject initializes default response object
+func DefaultResponseObject() *ResponseObject {
 
-	// id can be undefined (notification)
-	if id == nil {
-		return "", nil
+	respObj := new(ResponseObject) // &ResponseObject{}
+
+	// set JSON-RPC response version
+	respObj.Jsonrpc = JSONRPCVersion
+
+	// set ID string to null
+	respObj.IDString = "null"
+
+	// set default response status code
+	respObj.HTTPResponseStatusCode = http.StatusOK
+
+	// init headers map
+	respObj.Headers = make(map[string]string)
+
+	// set response Content-Type header
+	respObj.Headers["Content-Type"] = "application/json"
+
+	return respObj
+}
+
+// ValidateHTTPProtocolVersion validates HTTP protocol version
+func (responseObject *ResponseObject) ValidateHTTPProtocolVersion(r *http.Request) bool {
+
+	// check request protocol version
+	if r.Proto != "HTTP/1.1" {
+		responseObject.Error = &ErrorObject{
+			Code:    InvalidRequestCode,
+			Message: InvalidRequestMessage,
+			Data:    "request protocol version must be HTTP/1.1",
+		}
+
+		// set Response status code to 501 (not implemented)
+		responseObject.HTTPResponseStatusCode = http.StatusNotImplemented
+
+		return false
 	}
 
-	var idObj interface{}
-
-	// decoding id to object
-	err := json.Unmarshal(*id, &idObj)
-	if err != nil {
-		return "", &ErrorObject{
-			Code:    InvalidIDCode,
-			Message: InvalidIDMessage,
-			Data:    err.Error(),
-		}
-	}
-
-	// checking allowed data types
-	switch v := idObj.(type) {
-	case float64: // json package will assume float64 data type when you Unmarshal into an interface{}
-		if math.Trunc(v) != v { // truncate non integer part from float64
-			return "", &ErrorObject{
-				Code:    InvalidIDCode,
-				Message: InvalidIDMessage,
-				Data:    "ID must be one of string, number or undefined",
-			}
-		}
-		return strconv.FormatFloat(v, 'f', 0, 64), nil // convert number to string
-	case string:
-		return v, nil
-	case nil:
-		return "", nil
-	default: // other data types
-		return "", &ErrorObject{
-			Code:    InvalidIDCode,
-			Message: InvalidIDMessage,
-			Data:    "ID must be one of string, number or undefined",
-		}
-	}
+	return true
 }
 
 // ValidateHTTPRequestMethod validates HTTP request method
@@ -169,6 +152,61 @@ func (responseObject *ResponseObject) ValidateJSONRPCVersionNumber() bool {
 	return true
 }
 
+// ResponseMarshal create a bytes encoded representation of a single response object
+func (responseObject *ResponseObject) ResponseMarshal() ([]byte, error) {
+
+	b, err := json.Marshal(responseObject)
+	if err != nil {
+		return InternalServerErrorJSONRPCMessage(err.Error()), err
+	}
+
+	return b, nil
+}
+
+// ConvertIDtoString converts ID parameter to string, also validates ID data type
+func ConvertIDtoString(id *json.RawMessage) (string, *ErrorObject) {
+
+	// id can be undefined (notification)
+	if id == nil {
+		return "null", nil
+	}
+
+	var idObj interface{}
+
+	// decoding id to object
+	err := json.Unmarshal(*id, &idObj)
+	if err != nil {
+		return "", &ErrorObject{
+			Code:    InvalidIDCode,
+			Message: InvalidIDMessage,
+			Data:    err.Error(),
+		}
+	}
+
+	// checking allowed data types
+	switch v := idObj.(type) {
+	case float64: // json package will assume float64 data type when you Unmarshal into an interface{}
+		if math.Trunc(v) != v { // truncate non integer part from float64
+			return "", &ErrorObject{
+				Code:    InvalidIDCode,
+				Message: InvalidIDMessage,
+				Data:    "ID must be one of string, number or undefined",
+			}
+		}
+		return strconv.FormatFloat(v, 'f', 0, 64), nil // convert number to string
+	case string:
+		return v, nil
+	case nil:
+		return "", nil
+	default: // other data types
+		return "", &ErrorObject{
+			Code:    InvalidIDCode,
+			Message: InvalidIDMessage,
+			Data:    "ID must be one of string, number or undefined",
+		}
+	}
+}
+
 // ReadRequestData reads HTTP request data to bytes array
 func ReadRequestData(r *http.Request) ([]byte, *ErrorObject) {
 
@@ -184,24 +222,37 @@ func ReadRequestData(r *http.Request) ([]byte, *ErrorObject) {
 	return data, nil
 }
 
-// DefaultResponseObject initializes default response object
-func DefaultResponseObject() *ResponseObject {
+// Call invokes the named method with the provided parameters
+func (s *Service) Call(name string, data ParametersObject) (interface{}, *ErrorObject) {
 
-	respObj := new(ResponseObject) // &ResponseObject{}
+	// check that request method member is not rpc-internal method
+	if strings.HasPrefix(strings.ToLower(name), "rpc.") {
+		return nil, &ErrorObject{
+			Code:    InvalidRequestCode,
+			Message: InvalidRequestMessage,
+			Data:    "method cannot match the pattern rpc.*",
+		}
+	}
 
-	// set JSON-RPC response version
-	respObj.Jsonrpc = JSONRPCVersion
+	// lookup method inside methods map
+	method, ok := s.Methods[name]
+	if !ok {
+		return nil, &ErrorObject{
+			Code:    MethodNotFoundCode,
+			Message: MethodNotFoundMessage,
+		}
+	}
 
-	// set default response status code
-	respObj.HTTPResponseStatusCode = http.StatusOK
+	// noncallable named method
+	if method.Method == nil {
+		return nil, &ErrorObject{
+			Code:    InternalErrorCode,
+			Message: InternalErrorMessage,
+			Data:    "unable to call provided method",
+		}
+	}
 
-	// init headers map
-	respObj.Headers = make(map[string]string)
-
-	// set response Content-Type header
-	respObj.Headers["Content-Type"] = "application/json"
-
-	return respObj
+	return method.Method(data)
 }
 
 // Do parses the JSON request body and returns response object
@@ -212,6 +263,11 @@ func (s *Service) Do(r *http.Request) *ResponseObject {
 
 	// create default response object
 	respObj := DefaultResponseObject()
+
+	// check HTTP protocol version
+	if ok := respObj.ValidateHTTPProtocolVersion(r); !ok {
+		return respObj
+	}
 
 	// check request Method
 	if ok := respObj.ValidateHTTPRequestMethod(r); !ok {
@@ -286,6 +342,7 @@ func (s *Service) Do(r *http.Request) *ResponseObject {
 
 	// set response ID
 	respObj.ID = reqObj.ID
+	respObj.IDString = idStr
 
 	// set notification flag
 	if reqObj.ID == nil {
@@ -294,10 +351,16 @@ func (s *Service) Do(r *http.Request) *ResponseObject {
 
 	// prepare parameters object for named method
 	paramsObj := ParametersObject{
-		IDString: idStr,
-		Method:   reqObj.Method,
-		Params:   reqObj.Params,
+		RemoteAddr:     r.RemoteAddr,
+		UserAgent:      r.UserAgent(),
+		IDString:       idStr,
+		IsNotification: respObj.IsNotification,
+		Method:         reqObj.Method,
+		Params:         reqObj.Params,
 	}
+
+	// set method name in response object
+	respObj.Method = reqObj.Method
 
 	// invoke named method with the provided parameters
 	respObj.Result, errObj = s.Call(reqObj.Method, paramsObj)
@@ -308,34 +371,6 @@ func (s *Service) Do(r *http.Request) *ResponseObject {
 	}
 
 	return respObj
-}
-
-// InternalServerErrorJSONRPCMessage generates internal server error message as bytes array
-func InternalServerErrorJSONRPCMessage(message string) []byte {
-
-	if len(message) == 0 {
-		message = "critical error occurred"
-	}
-
-	str := fmt.Sprintf("{\"jsonrpc\":\"%s\",\"error\":{\"code\":%d,\"message\":\"%s\",\"data\":\"%s\"},\"id\":null}",
-		JSONRPCVersion,
-		InternalErrorCode,
-		InternalErrorMessage,
-		message,
-	)
-
-	return []byte(str)
-}
-
-// ResponseMarshal create a bytes encoded representation of a single response object
-func (responseObject *ResponseObject) ResponseMarshal() []byte {
-
-	b, err := json.Marshal(responseObject)
-	if err != nil {
-		return InternalServerErrorJSONRPCMessage(err.Error())
-	}
-
-	return b
 }
 
 // RPCHandler handles incoming RPC client requests, generates responses
@@ -364,9 +399,15 @@ func (s *Service) RPCHandler(w http.ResponseWriter, r *http.Request) {
 	// write response code to HTTP writer interface
 	w.WriteHeader(respObj.HTTPResponseStatusCode)
 
-	// write data to HTTP writer interface
-	_, err := w.Write(respObj.ResponseMarshal())
+	// get response as bytes array, log marshal error
+	b, err := respObj.ResponseMarshal()
 	if err != nil {
-		panic(err.Error())
+		s.CriticalLogf("ID=%s, response marshal error: %s", respObj.IDString, err.Error())
+	}
+
+	// write data to HTTP writer interface
+	_, err = w.Write(b)
+	if err != nil {
+		s.CriticalLogf("ID=%s, response writer error: %s", respObj.IDString, err.Error())
 	}
 }

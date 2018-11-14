@@ -1,6 +1,6 @@
-# Golang JSON-RPC 2.0 over HTTP Service Library
+# Golang JSON-RPC 2.0 over HTTP/1.1 Service Library
 
-This library implements JSON-RPC 2.0 over HTTP service loosely following specification:
+This library implements JSON-RPC 2.0 over HTTP/1.1 service loosely following specification:
 
  - [JSON-RPC 2.0 Specification](http://www.jsonrpc.org/specification). 
  - [JSON-RPC 2.0 over HTTP Specification Draft](https://www.simple-is-better.org/json-rpc/transport_http.html)
