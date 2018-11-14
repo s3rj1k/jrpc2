@@ -2,6 +2,7 @@ package jrpc2
 
 import (
 	"encoding/json"
+	"log"
 )
 
 // ErrorObject represents a response error object
@@ -37,8 +38,12 @@ type ResponseObject struct {
 	// ID contains the client established request id or null
 	ID *json.RawMessage `json:"id,omitempty"`
 
-	// IsNotification specifies that this response is of Notification type (internal helper)
+	// IDString contains request ID as string data type
+	IDString string `json:"-"`
+	// IsNotification specifies that this response is of Notification type
 	IsNotification bool `json:"-"`
+	// Method contains the name of the method that was invoked
+	Method string `json:"-"`
 	// HTTPResponseStatusCode specifies http response code to be set by server
 	HTTPResponseStatusCode int `json:"-"`
 	// Headers contains response headers
@@ -47,10 +52,19 @@ type ResponseObject struct {
 
 // ParametersObject represents input data for JSON-RPC 2.0 method.
 type ParametersObject struct {
+	// IsNotification specifies that this response is of Notification type
+	IsNotification bool `json:"-"`
 	// IDString contains request ID as string data type
-	IDString string
+	IDString string `json:"-"`
+
 	// Method contains the name of the method to be invoked
-	Method string
+	Method string `json:"-"`
+
+	// RemoteAddr contains remote address of request source
+	RemoteAddr string `json:"-"`
+	// UserAgent contains user agent of client who made request
+	UserAgent string `json:"-"`
+
 	// Params contains raw json params data
 	Params json.RawMessage
 }
@@ -63,12 +77,24 @@ type Method struct {
 
 // Service represents a JSON-RPC 2.0 capable HTTP server
 type Service struct {
-	// Host is the host:port of the server
-	Host string
+	// Socket is the U0nix Socket Path for the server
+	Socket string
+	// SocketPermissions is Unix Socket permission for chmod
+	SocketPermissions uint32
+
 	// Route is the Path to the JSON-RPC API
 	Route string
+
 	// Methods contains the mapping of registered methods
 	Methods map[string]Method
+
 	// Headers contains custom response headers
 	Headers map[string]string
+
+	// InfoLogger defines info level logger object
+	InfoLogger *log.Logger
+	// ErrorLogger defines error level logger object
+	ErrorLogger *log.Logger
+	// CriticalLogger defines critical level logger object (intended for internal use)
+	CriticalLogger *log.Logger
 }
