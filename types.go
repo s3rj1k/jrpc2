@@ -77,12 +77,17 @@ type Method struct {
 
 // Service represents a JSON-RPC 2.0 capable HTTP server
 type Service struct {
-	// Host is the host:port of the server
-	Host string
+	// Socket is the U0nix Socket Path for the server
+	Socket string
+	// SocketPermissions is Unix Socket permission for chmod
+	SocketPermissions uint32
+
 	// Route is the Path to the JSON-RPC API
 	Route string
+
 	// Methods contains the mapping of registered methods
 	Methods map[string]Method
+
 	// Headers contains custom response headers
 	Headers map[string]string
 

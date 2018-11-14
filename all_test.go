@@ -3,20 +3,23 @@ package jrpc2
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math/rand"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 )
 
+const us = "/tmp/jrpc2.socket"
 const endpoint = "jrpc"
-const port = "31500"
 
 var id, x, y int        // nolint:gochecknoglobals
 var r *strings.Replacer // nolint:gochecknoglobals
@@ -136,9 +139,17 @@ func init() {
 		"#Y", strconv.Itoa(y),
 	)
 
+	// Remove old Unix Socket
+	if _, err := os.Stat(us); !os.IsNotExist(err) {
+		err := os.Remove(us)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+
 	go func() {
 		s := Create(
-			net.JoinHostPort("localhost", port),
+			us,
 			fmt.Sprintf("/%s", endpoint),
 			map[string]string{
 				"Server":                        "JSON-RPC/2.0 (Golang)",
@@ -155,17 +166,26 @@ func init() {
 
 		s.Start()
 	}()
+
+	// Wait for Unix Socket to be created
+	for {
+		time.Sleep(1 * time.Millisecond)
+		if _, err := os.Stat(us); !os.IsNotExist(err) {
+			break
+		}
+	}
 }
 
 // Wrapper for sending request to mock server
 func sendTestRequest(request string) (*http.Response, error) {
 
 	// full JSON-RPC 2.0 URL
-	url := fmt.Sprintf("http://%s/%s", net.JoinHostPort("localhost", port), endpoint)
+	url := fmt.Sprintf("http://localhost/%s", endpoint)
 
 	headers := map[string]string{
 		"Accept":       "application/json", // set Accept header
 		"Content-Type": "application/json", // set Content-Type header
+		"X-Real-IP":    "127.0.0.1",        // set X-Real-IP (upstream reverse proxy)
 	}
 
 	// call wrapper
@@ -178,8 +198,14 @@ func httpPost(url, request string, headers map[string]string) (*http.Response, e
 	// request data
 	buf := bytes.NewBuffer([]byte(r.Replace(request)))
 
-	// prepare default http client config
-	client := new(http.Client) // &http.Client{}
+	// prepare default http client config over Unix Socket
+	httpc := http.Client{
+		Transport: &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", us)
+			},
+		},
+	}
 
 	// set request type to POST
 	req, err := http.NewRequest("POST", url, buf)
@@ -193,7 +219,7 @@ func httpPost(url, request string, headers map[string]string) (*http.Response, e
 	}
 
 	// send request
-	return client.Do(req)
+	return httpc.Do(req)
 }
 
 func TestNonPOSTRequestType(t *testing.T) {
@@ -201,9 +227,18 @@ func TestNonPOSTRequestType(t *testing.T) {
 	var result Result
 
 	// full JSON-RPC 2.0 URL
-	url := fmt.Sprintf("http://%s/%s", net.JoinHostPort("localhost", port), endpoint)
+	url := fmt.Sprintf("http://localhost/%s", endpoint)
 
-	resp, err := http.Get(url)
+	// prepare default http client config over Unix Socket
+	httpc := http.Client{
+		Transport: &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", us)
+			},
+		},
+	}
+
+	resp, err := httpc.Get(url)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +287,7 @@ func TestRequestHeaderWrongContentType(t *testing.T) {
 	var result Result
 
 	// full JSON-RPC 2.0 URL
-	url := fmt.Sprintf("http://%s/%s", net.JoinHostPort("localhost", port), endpoint)
+	url := fmt.Sprintf("http://localhost/%s", endpoint)
 
 	headers := map[string]string{
 		"Accept":       "application/json",      // set Accept header
@@ -306,7 +341,7 @@ func TestRequestHeaderWrongAccept(t *testing.T) {
 	var result Result
 
 	// full JSON-RPC 2.0 URL
-	url := fmt.Sprintf("http://%s/%s", net.JoinHostPort("localhost", port), endpoint)
+	url := fmt.Sprintf("http://localhost/%s", endpoint)
 
 	headers := map[string]string{
 		"Accept":       "x-www-form-urlencoded", // set Accept header
@@ -358,7 +393,7 @@ func TestRequestHeaderWrongAccept(t *testing.T) {
 func TestWrongEndpoint(t *testing.T) {
 
 	// wrong URL (404 response)
-	url := fmt.Sprintf("http://%s/foobar", net.JoinHostPort("localhost", port))
+	url := fmt.Sprintf("http://localhost/%s/v2", endpoint)
 
 	headers := map[string]string{
 		"Accept":       "application/json", // set Accept header
@@ -522,7 +557,7 @@ func TestInternalParamsPassthrough(t *testing.T) {
 	if _, ok := result.Result.(map[string]interface{}); !ok {
 		t.Fatal("expected Result type to be 'map[string]interface{}'")
 	}
-	if val, ok := result.Result.(map[string]interface{})["RemoteAddr"].(string); !ok || !strings.Contains(val, "127.0.0.1:") {
+	if val, ok := result.Result.(map[string]interface{})["RemoteAddr"].(string); !ok || !strings.HasPrefix(val, "127.0.0.1") {
 		t.Fatal("expected RemoteAddr to contain '127.0.0.1'")
 	}
 	if val, ok := result.Result.(map[string]interface{})["UserAgent"].(string); !ok || !strings.EqualFold(val, "Go-http-client/1.1") {
