@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"syscall"
 )
 
 // Create defines a new service instance
@@ -31,6 +32,13 @@ func (s *Service) Register(name string, method Method) {
 func (s *Service) Start() {
 	http.HandleFunc(s.Route, s.RPCHandler)
 
+	if _, err := os.Stat(s.Socket); !os.IsNotExist(err) {
+		err := syscall.Unlink(s.Socket)
+		if err != nil {
+			s.Fatalf("JSON-RPC 2.0 service error: %s", err.Error())
+		}
+	}
+
 	us, err := net.Listen("unix", s.Socket)
 	if err != nil {
 		s.Fatalf("JSON-RPC 2.0 service error: %s", err.Error())
@@ -44,4 +52,11 @@ func (s *Service) Start() {
 	if err != nil {
 		s.Fatalf("JSON-RPC 2.0 service error: %s", err.Error())
 	}
+
+	defer func() {
+		err := us.Close()
+		if err != nil {
+			s.Fatalf("JSON-RPC 2.0 service error: %s", err.Error())
+		}
+	}()
 }
