@@ -4,12 +4,6 @@ import (
 	"net/http"
 )
 
-/*
-  Specification URLs:
-    - https://www.jsonrpc.org/specification
-    - https://www.simple-is-better.org/json-rpc/transport_http.html
-*/
-
 // RPCHandler handles incoming RPC client requests, generates responses
 func (s *Service) RPCHandler(w http.ResponseWriter, r *http.Request) {
 
