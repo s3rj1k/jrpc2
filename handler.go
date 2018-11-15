@@ -30,15 +30,10 @@ func (s *Service) RPCHandler(w http.ResponseWriter, r *http.Request) {
 	// write response code to HTTP writer interface
 	w.WriteHeader(respObj.HTTPResponseStatusCode)
 
-	// get response as bytes array, log marshal error
-	b, err := respObj.ResponseMarshal()
-	if err != nil {
-		s.CriticalLogf("ID=%s, response marshal error: %s", respObj.IDString, err.Error())
-	}
-
 	// write data to HTTP writer interface
-	_, err = w.Write(b)
-	if err != nil {
-		s.CriticalLogf("ID=%s, response writer error: %s", respObj.IDString, err.Error())
+	_, err := w.Write(respObj.ResponseMarshal())
+	if err != nil { // this should never happen
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 }

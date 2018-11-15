@@ -1,7 +1,6 @@
 package jrpc2
 
 import (
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -16,10 +15,6 @@ func Create(socket, route string, headers map[string]string) *Service {
 		Route:             route,
 		Methods:           make(map[string]Method),
 		Headers:           headers,
-
-		InfoLogger:     log.New(os.Stdout, "INF: ", log.Ldate|log.Ltime|log.Lshortfile),
-		ErrorLogger:    log.New(os.Stderr, "ERR: ", log.Ldate|log.Ltime|log.Lshortfile),
-		CriticalLogger: log.New(os.Stderr, "CRT: ", log.Ldate|log.Ltime|log.Lshortfile),
 	}
 }
 
@@ -29,34 +24,38 @@ func (s *Service) Register(name string, method Method) {
 }
 
 // Start binds the RPCHandler to the server route and starts the http server
-func (s *Service) Start() {
+func (s *Service) Start() error {
 	http.HandleFunc(s.Route, s.RPCHandler)
+
+	var rerr error
 
 	if _, err := os.Stat(s.Socket); !os.IsNotExist(err) {
 		err := syscall.Unlink(s.Socket)
 		if err != nil {
-			s.Fatalf("JSON-RPC 2.0 service error: %s", err.Error())
+			return err
 		}
 	}
 
 	us, err := net.Listen("unix", s.Socket)
 	if err != nil {
-		s.Fatalf("JSON-RPC 2.0 service error: %s", err.Error())
+		return err
 	}
 
 	if err = os.Chmod(s.Socket, os.FileMode(s.SocketPermissions)); err != nil {
-		s.Fatalf("JSON-RPC 2.0 service error: %s", err.Error())
+		return err
 	}
 
 	err = http.Serve(us, nil)
 	if err != nil {
-		s.Fatalf("JSON-RPC 2.0 service error: %s", err.Error())
+		return err
 	}
 
 	defer func() {
 		err := us.Close()
 		if err != nil {
-			s.Fatalf("JSON-RPC 2.0 service error: %s", err.Error())
+			rerr = err
 		}
 	}()
+
+	return rerr
 }

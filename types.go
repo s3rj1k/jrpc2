@@ -2,7 +2,6 @@ package jrpc2
 
 import (
 	"encoding/json"
-	"log"
 )
 
 // ErrorObject represents a response error object
@@ -90,11 +89,4 @@ type Service struct {
 
 	// Headers contains custom response headers
 	Headers map[string]string
-
-	// InfoLogger defines info level logger object
-	InfoLogger *log.Logger
-	// ErrorLogger defines error level logger object
-	ErrorLogger *log.Logger
-	// CriticalLogger defines critical level logger object (intended for internal use)
-	CriticalLogger *log.Logger
 }

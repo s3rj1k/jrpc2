@@ -29,12 +29,12 @@ func DefaultResponseObject() *ResponseObject {
 }
 
 // ResponseMarshal create a bytes encoded representation of a single response object
-func (responseObject *ResponseObject) ResponseMarshal() ([]byte, error) {
+func (responseObject *ResponseObject) ResponseMarshal() []byte {
 
 	b, err := json.Marshal(responseObject)
 	if err != nil {
-		return InternalServerErrorJSONRPCMessage(err.Error()), err
+		return InternalServerErrorJSONRPCMessage(err.Error())
 	}
 
-	return b, nil
+	return b
 }

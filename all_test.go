@@ -164,7 +164,10 @@ func init() {
 		s.Register("copy", Method{Method: CopyParamsData})
 		s.Register("subtract", Method{Method: Subtract})
 
-		s.Start()
+		err := s.Start()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}()
 
 	// Wait for Unix Socket to be created
