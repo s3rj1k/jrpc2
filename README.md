@@ -9,6 +9,10 @@ This library implements JSON-RPC 2.0 over HTTP/1.1 service loosely following spe
 **s3rj1k/jrpc2** was originally based on Jared Patricks **[bitwurx/jrpc2](https://github.com/bitwurx/jrpc2)**,
 but has been completely rewritten.
 
+### Client:
+client folder contains basic JSON-RPC-2.0 client implementation
+with auto-generated ID as UUIDv4 string
+
 ### Known limitations:
  - no support for batch requests
 
