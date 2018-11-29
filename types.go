@@ -76,7 +76,7 @@ type Method struct {
 
 // Service represents a JSON-RPC 2.0 capable HTTP server
 type Service struct {
-	// Socket is the U0nix Socket Path for the server
+	// Socket is the Unix Socket Path for the server
 	Socket string
 	// SocketPermissions is Unix Socket permission for chmod
 	SocketPermissions uint32
