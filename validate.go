@@ -29,10 +29,8 @@ func (responseObject *ResponseObject) ValidateHTTPProtocolVersion(r *http.Reques
 // ValidateHTTPRequestMethod validates HTTP request method
 func (responseObject *ResponseObject) ValidateHTTPRequestMethod(r *http.Request) bool {
 
-	const PostMethodName = "POST"
-
 	// check request Method
-	if r.Method != PostMethodName {
+	if r.Method != http.MethodPost {
 		responseObject.Error = &ErrorObject{
 			Code:    InvalidRequestCode,
 			Message: InvalidRequestMessage,
@@ -43,7 +41,7 @@ func (responseObject *ResponseObject) ValidateHTTPRequestMethod(r *http.Request)
 		responseObject.HTTPResponseStatusCode = http.StatusMethodNotAllowed
 
 		// set Allow header
-		responseObject.Headers["Allow"] = PostMethodName
+		responseObject.Headers["Allow"] = http.MethodPost
 
 		return false
 	}
