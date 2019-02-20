@@ -8,14 +8,12 @@ import (
 // Config - config object for JSON-RPC Call
 type Config struct {
 	// JSON-RPC FQDN URI
-	URL string
+	URI string
 	// Custom HTTP headers for POST request
 	Headers map[string]string
 
-	// HTTP response timeout
-	HTTPTimeout time.Duration
-	// TCP response timeout
-	TransportTimeout time.Duration
+	// Context response timeout
+	Timeout time.Duration
 
 	// TCP gzip compression, also sets needed headers
 	DisableCompression bool

@@ -2,13 +2,15 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"strings"
+
+	"golang.org/x/net/context/ctxhttp"
 )
 
 // getRequestObject - JSON-RPC request object
@@ -26,19 +28,17 @@ func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, e
 
 	var rerr, err error
 
+	// custom transport config
+	tr := &http.Transport{
+		DisableCompression: c.DisableCompression,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: c.InsecureSkipVerify, // nolint: gosec
+		},
+	}
+
 	// custom http client config
 	var client = &http.Client{
-		Timeout: c.HTTPTimeout,
-		Transport: &http.Transport{
-			Dial: (&net.Dialer{
-				Timeout: c.TransportTimeout,
-			}).Dial,
-			DisableCompression:  c.DisableCompression,
-			TLSHandshakeTimeout: c.TransportTimeout,
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: c.InsecureSkipVerify, // nolint: gosec
-			},
-		},
+		Transport: tr,
 	}
 
 	// prepare request object
@@ -54,7 +54,7 @@ func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, e
 	buf := bytes.NewBuffer(reqData)
 
 	// set request type to POST
-	req, err := http.NewRequest("POST", c.URL, buf)
+	req, err := http.NewRequest("POST", c.URI, buf)
 	if err != nil {
 		return nil, fmt.Errorf("JSON-RPC error: %s", err.Error())
 	}
@@ -72,8 +72,12 @@ func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, e
 	// prepare response
 	var resp *http.Response
 
+	// set timeout
+	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
+	defer cancel()
+
 	// send request
-	resp, err = client.Do(req)
+	resp, err = ctxhttp.Do(ctx, client, req)
 	if err != nil {
 		return nil, fmt.Errorf("JSON-RPC error: %s", err.Error())
 	}
