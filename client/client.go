@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"strings"
 
@@ -34,6 +35,13 @@ func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, e
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: c.InsecureSkipVerify, // nolint: gosec
 		},
+	}
+
+	// custom transport config for unix socket
+	if len(c.SocketPath) > 0 {
+		tr.DialContext = func(_ context.Context, _, _ string) (net.Conn, error) {
+			return net.Dial("unix", c.SocketPath)
+		}
 	}
 
 	// custom http client config

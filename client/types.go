@@ -9,6 +9,9 @@ import (
 type Config struct {
 	// JSON-RPC FQDN URI
 	URI string
+	// JSON-RPC Unix Socket Path
+	SocketPath string
+
 	// Custom HTTP headers for POST request
 	Headers map[string]string
 
