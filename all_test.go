@@ -156,7 +156,7 @@ func init() {
 	go func() {
 		s := Create(
 			us,
-			fmt.Sprintf("%s", endpoint),
+			endpoint,
 			map[string]string{
 				"Server":                        "JSON-RPC/2.0 (Golang)",
 				"Access-Control-Allow-Origin":   "*",
