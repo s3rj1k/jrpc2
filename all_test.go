@@ -21,7 +21,7 @@ import (
 )
 
 const us = "/tmp/jrpc2.socket"
-const endpoint = ""
+const endpoint = "/jrpc"
 
 var id, x, y int        // nolint:gochecknoglobals
 var r *strings.Replacer // nolint:gochecknoglobals
@@ -429,7 +429,7 @@ func TestRequestHeaderWrongAccept(t *testing.T) {
 
 func TestWrongEndpoint(t *testing.T) {
 
-	// wrong URL (404 response)
+	// wrong URL (404 response) for non-root endpoint, https://golang.org/pkg/net/http/#ServeMux
 	url := fmt.Sprintf("http://localhost%s", "/WRONG")
 
 	headers := map[string]string{
@@ -438,7 +438,7 @@ func TestWrongEndpoint(t *testing.T) {
 	}
 
 	// call wrapper
-	resp, err := httpPost(url, `{}`, headers)
+	resp, err := httpPost(url, `{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`, headers)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -450,8 +450,12 @@ func TestWrongEndpoint(t *testing.T) {
 		}
 	}()
 
-	if resp.StatusCode != http.StatusNotFound {
+	if resp.StatusCode != http.StatusNotFound && len(endpoint) > 1 {
 		t.Fatalf("expected HTTP status code to be '%d'", http.StatusNotFound)
+	}
+
+	if resp.StatusCode != http.StatusOK && len(endpoint) == 0 {
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
 }
 
