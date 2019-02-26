@@ -7,7 +7,7 @@ import (
 	"syscall"
 )
 
-// Create defines a new service instance
+// Create defines a new service instance.
 func Create(socket, route string, headers map[string]string) *Service {
 	return &Service{
 		Socket:            socket,
@@ -19,11 +19,13 @@ func Create(socket, route string, headers map[string]string) *Service {
 }
 
 // Register maps the provided method to the given name for later method calls.
-func (s *Service) Register(name string, method Method) {
-	s.Methods[name] = method
+func (s *Service) Register(name string, f func(ParametersObject) (interface{}, *ErrorObject)) {
+	s.Methods[name] = Method{
+		Method: f,
+	}
 }
 
-// Start binds the RPCHandler to the server route and starts the http server
+// Start binds the RPCHandler to the server route and starts the http server.
 func (s *Service) Start() error {
 	http.HandleFunc(s.Route, s.RPCHandler)
 

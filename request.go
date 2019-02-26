@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// GetRealClientAddress attempts to acquire client IP from upstream reverse proxy
+// GetRealClientAddress attempts to acquire client IP from upstream reverse proxy.
 func GetRealClientAddress(r *http.Request) string {
 
 	// check X-Real-IP header
@@ -25,7 +25,7 @@ func GetRealClientAddress(r *http.Request) string {
 	return r.RemoteAddr
 }
 
-// ReadRequestData reads HTTP request data to bytes array
+// ReadRequestData reads HTTP request data to bytes array.
 func ReadRequestData(r *http.Request) ([]byte, *ErrorObject) {
 
 	data, err := ioutil.ReadAll(r.Body)

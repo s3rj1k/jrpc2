@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 )
 
-// ErrorObject represents a response error object
+// ErrorObject represents a response error object.
 type ErrorObject struct {
 	// Code indicates the error type that occurred
 	Code int `json:"code"`
@@ -14,7 +14,7 @@ type ErrorObject struct {
 	Data interface{} `json:"data,omitempty"`
 }
 
-// RequestObject represents a request object
+// RequestObject represents a request object.
 type RequestObject struct {
 	// Jsonrpc specifies the version of the JSON-RPC protocol, equals to "2.0"
 	Jsonrpc string `json:"jsonrpc"`
@@ -26,7 +26,7 @@ type RequestObject struct {
 	ID *json.RawMessage `json:"id,omitempty"`
 }
 
-// ResponseObject represents a response object
+// ResponseObject represents a response object.
 type ResponseObject struct {
 	// Jsonrpc specifies the version of the JSON-RPC protocol, equals to "2.0"
 	Jsonrpc string `json:"jsonrpc"`
@@ -74,7 +74,7 @@ type Method struct {
 	Method func(ParametersObject) (interface{}, *ErrorObject)
 }
 
-// Service represents a JSON-RPC 2.0 capable HTTP server
+// Service represents a JSON-RPC 2.0 capable HTTP server.
 type Service struct {
 	// Socket is the Unix Socket Path for the server
 	Socket string

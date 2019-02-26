@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-// InternalServerErrorJSONRPCMessage generates internal server error message as bytes array
+// InternalServerErrorJSONRPCMessage generates internal server error message as bytes array.
 func InternalServerErrorJSONRPCMessage(message string) []byte {
 
 	if len(message) == 0 {

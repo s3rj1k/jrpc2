@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-// Call invokes the named method with the provided parameters
+// Call invokes the named method with the provided parameters.
 func (s *Service) Call(name string, data ParametersObject) (interface{}, *ErrorObject) {
 
 	// check that request method member is not rpc-internal method

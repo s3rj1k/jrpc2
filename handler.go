@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// RPCHandler handles incoming RPC client requests, generates responses
+// RPCHandler handles incoming RPC client requests, generates responses.
 func (s *Service) RPCHandler(w http.ResponseWriter, r *http.Request) {
 
 	// get response struct

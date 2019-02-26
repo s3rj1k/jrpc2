@@ -5,7 +5,7 @@ import (
 )
 
 // GetPositionalFloat64Params parses positional param member of JSON-RPC 2.0 request
-// that is know to contain float64 array
+// that is know to contain float64 array.
 func GetPositionalFloat64Params(data ParametersObject) ([]float64, *ErrorObject) {
 
 	params := make([]float64, 0)
@@ -23,7 +23,7 @@ func GetPositionalFloat64Params(data ParametersObject) ([]float64, *ErrorObject)
 }
 
 // GetPositionalInt64Params parses positional param member of JSON-RPC 2.0 request
-// that is know to contain int64 array
+// that is know to contain int64 array.
 func GetPositionalInt64Params(data ParametersObject) ([]int64, *ErrorObject) {
 
 	params := make([]int64, 0)
@@ -41,7 +41,7 @@ func GetPositionalInt64Params(data ParametersObject) ([]int64, *ErrorObject) {
 }
 
 // GetPositionalIntParams parses positional param member of JSON-RPC 2.0 request
-// that is know to contain int array
+// that is know to contain int array.
 func GetPositionalIntParams(data ParametersObject) ([]int, *ErrorObject) {
 
 	params := make([]int, 0)
@@ -59,7 +59,7 @@ func GetPositionalIntParams(data ParametersObject) ([]int, *ErrorObject) {
 }
 
 // GetPositionalUint64Params parses positional param member of JSON-RPC 2.0 request
-// that is know to contain int64 array
+// that is know to contain int64 array.
 func GetPositionalUint64Params(data ParametersObject) ([]uint64, *ErrorObject) {
 
 	params := make([]uint64, 0)
@@ -77,7 +77,7 @@ func GetPositionalUint64Params(data ParametersObject) ([]uint64, *ErrorObject) {
 }
 
 // GetPositionalUintParams parses positional param member of JSON-RPC 2.0 request
-// that is know to contain uint array
+// that is know to contain uint array.
 func GetPositionalUintParams(data ParametersObject) ([]uint, *ErrorObject) {
 
 	params := make([]uint, 0)
@@ -95,7 +95,7 @@ func GetPositionalUintParams(data ParametersObject) ([]uint, *ErrorObject) {
 }
 
 // GetPositionalStringParams parses positional param member of JSON-RPC 2.0 request
-// that is know to contain string array
+// that is know to contain string array.
 func GetPositionalStringParams(data ParametersObject) ([]string, *ErrorObject) {
 
 	params := make([]string, 0)

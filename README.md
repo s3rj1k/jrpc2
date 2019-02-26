@@ -35,14 +35,12 @@ go test ./... -v
 
 ### Linter installation:
 ```sh
-curl -sfL https://raw.githubusercontent.com/alecthomas/gometalinter/master/scripts/install.sh | sh -s -- -b $GOPATH/bin
-curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $GOPATH/bin v1.12.2
-go get -u github.com/go-critic/go-critic/...
+curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $GOPATH/bin v1.15.0
 go get -u github.com/Quasilyte/go-consistent
 ```
 
 ### Run linters:
 ```sh
 golangci-lint run
-gometalinter
+go-consistent -v ./...
 ```

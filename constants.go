@@ -1,9 +1,9 @@
 package jrpc2
 
-// JSONRPCVersion specifies the version of the JSON-RPC protocol
+// JSONRPCVersion specifies the version of the JSON-RPC protocol.
 const JSONRPCVersion string = "2.0"
 
-// Error codes
+// Error codes.
 const (
 	ParseErrorCode     int = -32700
 	InvalidRequestCode int = -32600
@@ -15,7 +15,7 @@ const (
 	InvalidMethodCode  int = -32002
 )
 
-// Error message
+// Error message.
 const (
 	ParseErrorMessage     string = "Parse error"
 	InvalidRequestMessage string = "Invalid Request"

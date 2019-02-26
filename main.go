@@ -11,7 +11,7 @@ import (
     - https://www.simple-is-better.org/json-rpc/transport_http.html
 */
 
-// Do parses the JSON request body and returns response object
+// Do parses the JSON request body and returns response object.
 func (s *Service) Do(r *http.Request) *ResponseObject {
 
 	// create empty error object

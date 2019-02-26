@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// ValidateHTTPProtocolVersion validates HTTP protocol version
+// ValidateHTTPProtocolVersion validates HTTP protocol version.
 func (responseObject *ResponseObject) ValidateHTTPProtocolVersion(r *http.Request) bool {
 
 	// check request protocol version
@@ -26,7 +26,7 @@ func (responseObject *ResponseObject) ValidateHTTPProtocolVersion(r *http.Reques
 	return true
 }
 
-// ValidateHTTPRequestMethod validates HTTP request method
+// ValidateHTTPRequestMethod validates HTTP request method.
 func (responseObject *ResponseObject) ValidateHTTPRequestMethod(r *http.Request) bool {
 
 	// check request Method
@@ -49,7 +49,7 @@ func (responseObject *ResponseObject) ValidateHTTPRequestMethod(r *http.Request)
 	return true
 }
 
-// ValidateHTTPRequestHeaders validates HTTP request headers
+// ValidateHTTPRequestHeaders validates HTTP request headers.
 func (responseObject *ResponseObject) ValidateHTTPRequestHeaders(r *http.Request) bool {
 
 	// check request Content-Type header
@@ -83,7 +83,7 @@ func (responseObject *ResponseObject) ValidateHTTPRequestHeaders(r *http.Request
 	return true
 }
 
-// ValidateJSONRPCVersionNumber validates JSON-RPC 2.0 request version member
+// ValidateJSONRPCVersionNumber validates JSON-RPC 2.0 request version member.
 func (responseObject *ResponseObject) ValidateJSONRPCVersionNumber() bool {
 
 	// validate JSON-RPC 2.0 request version member

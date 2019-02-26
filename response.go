@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// DefaultResponseObject initializes default response object
+// DefaultResponseObject initializes default response object.
 func DefaultResponseObject() *ResponseObject {
 
 	respObj := new(ResponseObject) // &ResponseObject{}
@@ -28,7 +28,7 @@ func DefaultResponseObject() *ResponseObject {
 	return respObj
 }
 
-// ResponseMarshal create a bytes encoded representation of a single response object
+// ResponseMarshal create a bytes encoded representation of a single response object.
 func (responseObject *ResponseObject) ResponseMarshal() []byte {
 
 	b, err := json.Marshal(responseObject)

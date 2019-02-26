@@ -117,6 +117,10 @@ func Subtract(data ParametersObject) (interface{}, *ErrorObject) {
 	return *paramObj.X - *paramObj.Y, nil
 }
 
+func Update(data ParametersObject) (interface{}, *ErrorObject) {
+	return nil, nil
+}
+
 // nolint: gochecknoinits
 func init() {
 
@@ -160,9 +164,9 @@ func init() {
 			},
 		)
 
-		s.Register("update", Method{Method: func(data ParametersObject) (interface{}, *ErrorObject) { return nil, nil }})
-		s.Register("copy", Method{Method: CopyParamsData})
-		s.Register("subtract", Method{Method: Subtract})
+		s.Register("update", Update)
+		s.Register("copy", CopyParamsData)
+		s.Register("subtract", Subtract)
 
 		err := s.Start()
 		if err != nil {
