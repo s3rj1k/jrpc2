@@ -16,10 +16,12 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/s3rj1k/jrpc2/client"
 )
 
 const us = "/tmp/jrpc2.socket"
-const endpoint = "jrpc"
+const endpoint = ""
 
 var id, x, y int        // nolint:gochecknoglobals
 var r *strings.Replacer // nolint:gochecknoglobals
@@ -154,7 +156,7 @@ func init() {
 	go func() {
 		s := Create(
 			us,
-			fmt.Sprintf("/%s", endpoint),
+			fmt.Sprintf("%s", endpoint),
 			map[string]string{
 				"Server":                        "JSON-RPC/2.0 (Golang)",
 				"Access-Control-Allow-Origin":   "*",
@@ -183,11 +185,11 @@ func init() {
 	}
 }
 
-// Wrapper for sending request to mock server
+// sendTestRequest is a wrapper for sending request to mock server
 func sendTestRequest(request string) (*http.Response, error) {
 
 	// full JSON-RPC 2.0 URL
-	url := fmt.Sprintf("http://localhost/%s", endpoint)
+	url := fmt.Sprintf("http://localhost%s", endpoint)
 
 	headers := map[string]string{
 		"Accept":       "application/json", // set Accept header
@@ -199,7 +201,7 @@ func sendTestRequest(request string) (*http.Response, error) {
 	return httpPost(url, request, headers)
 }
 
-// Generic wrapper for HTTP POST
+// httpPost is a wrapper for HTTP POST
 func httpPost(url, request string, headers map[string]string) (*http.Response, error) {
 
 	// request data
@@ -229,12 +231,40 @@ func httpPost(url, request string, headers map[string]string) (*http.Response, e
 	return httpc.Do(req)
 }
 
+func TestClientLibrary(t *testing.T) {
+
+	var result int
+
+	c := client.GetSocketConfig(us, endpoint)
+
+	rawMsg, err := c.Call("subtract", []byte("{\"X\": 45, \"Y\": 3}"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = json.Unmarshal(rawMsg, &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result != 42 {
+		t.Fatal("expected result to be '42'")
+	}
+
+	rawMsg, err = c.Call("subtract", []byte("{\"X\": 999.0, \"Y\": 999.0}"))
+	if err == nil {
+		t.Fatal(err)
+	}
+	if string(rawMsg) != "\"mock server error\"" {
+		t.Fatal("expected result to be \"mock server error\"")
+	}
+}
+
 func TestNonPOSTRequestType(t *testing.T) {
 
 	var result Result
 
 	// full JSON-RPC 2.0 URL
-	url := fmt.Sprintf("http://localhost/%s", endpoint)
+	url := fmt.Sprintf("http://localhost%s", endpoint)
 
 	// prepare default http client config over Unix Socket
 	httpc := http.Client{
@@ -294,7 +324,7 @@ func TestRequestHeaderWrongContentType(t *testing.T) {
 	var result Result
 
 	// full JSON-RPC 2.0 URL
-	url := fmt.Sprintf("http://localhost/%s", endpoint)
+	url := fmt.Sprintf("http://localhost%s", endpoint)
 
 	headers := map[string]string{
 		"Accept":       "application/json",      // set Accept header
@@ -348,7 +378,7 @@ func TestRequestHeaderWrongAccept(t *testing.T) {
 	var result Result
 
 	// full JSON-RPC 2.0 URL
-	url := fmt.Sprintf("http://localhost/%s", endpoint)
+	url := fmt.Sprintf("http://localhost%s", endpoint)
 
 	headers := map[string]string{
 		"Accept":       "x-www-form-urlencoded", // set Accept header
@@ -400,7 +430,7 @@ func TestRequestHeaderWrongAccept(t *testing.T) {
 func TestWrongEndpoint(t *testing.T) {
 
 	// wrong URL (404 response)
-	url := fmt.Sprintf("http://localhost/%s/v2", endpoint)
+	url := fmt.Sprintf("http://localhost%s", "/WRONG")
 
 	headers := map[string]string{
 		"Accept":       "application/json", // set Accept header
@@ -446,6 +476,7 @@ func TestResponseHeaders(t *testing.T) {
 		t.Fatal("got unexpected Server value")
 	}
 }
+
 func TestIDStringType(t *testing.T) {
 
 	var result Result
@@ -642,6 +673,7 @@ func TestIDTypeError(t *testing.T) {
 		}
 	}
 }
+
 func TestNonExistentMethod(t *testing.T) {
 
 	var result Result
@@ -728,6 +760,7 @@ func TestInvalidMethodObjectType(t *testing.T) {
 		t.Fatalf("expected Error Message to be '%s'", InvalidMethodMessage)
 	}
 }
+
 func TestNamedParameters(t *testing.T) {
 
 	var result Result
@@ -769,6 +802,7 @@ func TestNamedParameters(t *testing.T) {
 		t.Fatalf("expected Result to be '%f'", float64(x-y))
 	}
 }
+
 func TestNotification(t *testing.T) {
 
 	req := `{"jsonrpc": "2.0", "method": "subtract", "params": {"X": #X, "Y": #Y}}`
@@ -851,6 +885,7 @@ func TestBatchNotifications(t *testing.T) {
 		t.Fatalf("expected Error Message to be '%s'", NotImplementedMessage)
 	}
 }
+
 func TestPositionalParamters(t *testing.T) {
 
 	var result Result
@@ -940,6 +975,7 @@ func TestPositionalParamtersError(t *testing.T) {
 		t.Fatal("expected data to be 'mock server error'")
 	}
 }
+
 func TestInvalidJSON(t *testing.T) {
 
 	var result Result
