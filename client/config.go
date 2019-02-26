@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -25,10 +26,11 @@ func GetConfig(url string) *Config {
 }
 
 // GetSocketConfig - returns default JSON-RPC Call config using Unix-Socket
-func GetSocketConfig(socket string) *Config {
+func GetSocketConfig(socket, endpoint string) *Config {
 
 	c := new(Config)
 
+	c.URI = fmt.Sprintf("http://localhost%s", endpoint)
 	c.SocketPath = socket
 	c.Headers = map[string]string{
 		"Accept":       "application/json",             // set Accept header

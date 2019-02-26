@@ -1,18 +1,36 @@
 package jrpc2
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"syscall"
 )
+
+// sanitizeRoute is used for HTTP server route sanitization
+func sanitizeRoute(route string) string {
+
+	route = strings.TrimSpace(route)
+
+	if len(route) == 0 {
+		return "/"
+	}
+
+	if !strings.HasPrefix(route, "/") {
+		return fmt.Sprintf("/%s", route)
+	}
+
+	return route
+}
 
 // Create defines a new service instance.
 func Create(socket, route string, headers map[string]string) *Service {
 	return &Service{
 		Socket:            socket,
 		SocketPermissions: 0777,
-		Route:             route,
+		Route:             sanitizeRoute(route),
 		Methods:           make(map[string]Method),
 		Headers:           headers,
 	}
