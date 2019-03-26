@@ -38,15 +38,11 @@ type ResponseObject struct {
 	ID *json.RawMessage `json:"id,omitempty"`
 
 	// fields below are intentionally unexported
-	idString string // contains request ID as string data type
-
 	isNotification bool // specifies that this response is of Notification type
-
-	method string // contains the name of the method that was invoked
 
 	httpResponseStatusCode int // specifies http response code to be set by server
 
-	headers map[string]string // contains response headers
+	headers map[string]string // contains dynamic response headers
 }
 
 // ParametersObject represents input data for JSON-RPC 2.0 method.

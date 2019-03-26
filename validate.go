@@ -84,15 +84,18 @@ func (responseObject *ResponseObject) ValidateHTTPRequestHeaders(r *http.Request
 }
 
 // ValidateJSONRPCVersionNumber validates JSON-RPC 2.0 request version member.
-func (responseObject *ResponseObject) ValidateJSONRPCVersionNumber() bool {
+func (responseObject *ResponseObject) ValidateJSONRPCVersionNumber(version string) bool {
 
 	// validate JSON-RPC 2.0 request version member
-	if responseObject.Jsonrpc != JSONRPCVersion {
+	if version != JSONRPCVersion {
 		responseObject.Error = &ErrorObject{
 			Code:    InvalidRequestCode,
 			Message: InvalidRequestMessage,
 			Data:    fmt.Sprintf("jsonrpc request member must be exactly '%s'", JSONRPCVersion),
 		}
+
+		// set Response status code to 400 (bad request)
+		responseObject.httpResponseStatusCode = http.StatusBadRequest
 
 		return false
 	}

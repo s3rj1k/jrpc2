@@ -15,7 +15,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(header, value)
 	}
 
-	// set response headers
+	// set dynamic response headers
 	for header, value := range respObj.headers {
 		w.Header().Set(header, value)
 	}
@@ -24,6 +24,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if respObj.isNotification {
 		// set response header to 204, (no content)
 		w.WriteHeader(http.StatusNoContent)
+
 		return
 	}
 
@@ -34,6 +35,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, err := w.Write(respObj.ResponseMarshal())
 	if err != nil { // this should never happen
 		w.WriteHeader(http.StatusInternalServerError)
+
 		return
 	}
 }

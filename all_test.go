@@ -473,8 +473,8 @@ func TestResponseHeaders(t *testing.T) {
 		}
 	}()
 
-	if resp.StatusCode != http.StatusNoContent {
-		t.Fatalf("expected HTTP status code to be '%d'", http.StatusNoContent)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusBadRequest)
 	}
 	if v := resp.Header.Get("Server"); v != "JSON-RPC/2.0 (Golang)" {
 		t.Fatal("got unexpected Server value")

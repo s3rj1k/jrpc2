@@ -2,6 +2,7 @@ package jrpc2
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -36,15 +37,19 @@ func (s *Service) Do(r *http.Request) *ResponseObject {
 	}
 
 	// read request body
-	data, errObj := ReadRequestData(r)
-	if errObj != nil {
-		respObj.Error = errObj
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		respObj.Error = &ErrorObject{
+			Code:    ParseErrorCode,
+			Message: ParseErrorMessage,
+			Data:    err.Error(),
+		}
 
 		return respObj
 	}
 
 	// create placeholder for request object
-	reqObj := new(RequestObject) // &RequestObject{}
+	reqObj := new(RequestObject)
 
 	// decode request body
 	if err := json.Unmarshal(data, &reqObj); err != nil {
@@ -84,7 +89,7 @@ func (s *Service) Do(r *http.Request) *ResponseObject {
 	}
 
 	// validate JSON-RPC 2.0 request version member
-	if ok := respObj.ValidateJSONRPCVersionNumber(); !ok {
+	if ok := respObj.ValidateJSONRPCVersionNumber(reqObj.Jsonrpc); !ok {
 		return respObj
 	}
 
@@ -98,7 +103,6 @@ func (s *Service) Do(r *http.Request) *ResponseObject {
 
 	// set response ID
 	respObj.ID = reqObj.ID
-	respObj.idString = idStr
 
 	// set notification flag
 	if reqObj.ID == nil {
@@ -107,16 +111,12 @@ func (s *Service) Do(r *http.Request) *ResponseObject {
 
 	// prepare parameters object for named method
 	paramsObj := ParametersObject{
-		remoteAddress:  GetRealClientAddress(r),
-		userAgent:      r.UserAgent(),
-		idString:       idStr,
-		isNotification: respObj.isNotification,
-		method:         reqObj.Method,
-		params:         reqObj.Params,
+		remoteAddress: GetRealClientAddress(r),
+		userAgent:     r.UserAgent(),
+		idString:      idStr,
+		method:        reqObj.Method,
+		params:        reqObj.Params,
 	}
-
-	// set method name in response object
-	respObj.method = reqObj.Method
 
 	// invoke named method with the provided parameters
 	respObj.Result, errObj = s.Call(reqObj.Method, paramsObj)

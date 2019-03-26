@@ -9,28 +9,12 @@ import (
 	"syscall"
 )
 
-// sanitizeRoute is used for HTTP server route sanitization
-func sanitizeRoute(route string) string {
-
-	route = strings.TrimSpace(route)
-
-	if len(route) == 0 {
-		return "/"
-	}
-
-	if !strings.HasPrefix(route, "/") {
-		return fmt.Sprintf("/%s", route)
-	}
-
-	return route
-}
-
 // Create defines a new service instance.
 func Create(socket string) *Service {
 	return &Service{
 		Socket:            socket,
 		SocketPermissions: 0777,
-		Route:             sanitizeRoute("/"),
+		Route:             "/",
 		Headers:           make(map[string]string),
 		Methods:           make(map[string]Method),
 	}
@@ -48,7 +32,18 @@ func (s *Service) SetSocketPermissions(perm uint32) {
 
 // SetRoute sets custom route for service.
 func (s *Service) SetRoute(route string) {
-	s.Route = sanitizeRoute(route)
+
+	route = strings.TrimSpace(route)
+
+	if len(route) == 0 {
+		route = "/"
+	}
+
+	if !strings.HasPrefix(route, "/") {
+		route = fmt.Sprintf("/%s", route)
+	}
+
+	s.Route = route
 }
 
 // SetHeaders sets custom headers for service.
