@@ -34,8 +34,7 @@ type Result struct {
 }
 
 type CopyParamsDataResponse struct {
-	IsNotification bool   `json:"IsNotification"`
-	IDString       string `json:"IDString"`
+	ID string `json:"ID"`
 
 	Method string `json:"Method"`
 
@@ -56,8 +55,7 @@ func CopyParamsData(data ParametersObject) (interface{}, *ErrorObject) {
 
 	out.RemoteAddress = data.GetRemoteAddress()
 	out.UserAgent = data.GetUserAgent()
-	out.IDString = data.GetID()
-	out.IsNotification = data.IsNotification()
+	out.ID = data.GetID()
 	out.Method = data.GetMethodName()
 	out.Params = data.GetRawJSONParams()
 
@@ -606,14 +604,11 @@ func TestInternalParamsPassthrough(t *testing.T) {
 	if val, ok := result.Result.(map[string]interface{})["UserAgent"].(string); !ok || !strings.EqualFold(val, "Go-http-client/1.1") {
 		t.Fatal("expected UserAgent to be 'Go-http-client/1.1'")
 	}
-	if val, ok := result.Result.(map[string]interface{})["IDString"].(string); !ok || val != "42" {
-		t.Fatal("expected IDString to be '42'")
+	if val, ok := result.Result.(map[string]interface{})["ID"].(string); !ok || val != "42" {
+		t.Fatal("expected ID to be '42'")
 	}
-	if val, ok := result.Result.(map[string]interface{})["IDString"].(string); !ok || val != "42" {
-		t.Fatal("expected IDString to be '42'")
-	}
-	if val, ok := result.Result.(map[string]interface{})["IsNotification"].(bool); !ok || val {
-		t.Fatal("expected IsNotification to be 'false'")
+	if val, ok := result.Result.(map[string]interface{})["ID"].(string); !ok || val != "42" {
+		t.Fatal("expected ID to be '42'")
 	}
 	if val, ok := result.Result.(map[string]interface{})["Method"].(string); !ok || val != "copy" {
 		t.Fatal("expected Method to be 'copy'")

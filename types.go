@@ -38,9 +38,9 @@ type ResponseObject struct {
 	ID *json.RawMessage `json:"id,omitempty"`
 
 	// fields below are intentionally unexported
-	isNotification bool // specifies that this response is of Notification type
+	notification bool // specifies that this response is of Notification type
 
-	httpResponseStatusCode int // specifies http response code to be set by server
+	statusCode int // specifies HTTP response code to be set by server
 
 	headers map[string]string // contains dynamic response headers
 }
@@ -49,27 +49,20 @@ type ResponseObject struct {
 type ParametersObject struct {
 
 	// fields below are intentionally unexported
-	idString string // contains request ID as string data type
-
-	isNotification bool // specifies that this response is of Notification type
+	id string // contains request ID as string data type
 
 	method string // contains the name of the method that was invoked
 
-	remoteAddress string // contains remote address of request source
+	ra string // contains remote address of request source
 
-	userAgent string // contains user agent of client who made request
+	ua string // contains user agent of client who made request
 
 	params json.RawMessage // contains raw JSON params of invoked method
 }
 
-// IsNotification returns true than this response is of Notification type.
-func (p ParametersObject) IsNotification() bool {
-	return p.isNotification
-}
-
 // GetID returns request ID as string data type.
 func (p ParametersObject) GetID() string {
-	return p.idString
+	return p.id
 }
 
 // GetMethodName returns invoked request Method name as string data type.
@@ -79,12 +72,12 @@ func (p ParametersObject) GetMethodName() string {
 
 // GetRemoteAddress returns remote address of request source.
 func (p ParametersObject) GetRemoteAddress() string {
-	return p.remoteAddress
+	return p.ra
 }
 
 // GetUserAgent returns user agent of client who made request.
 func (p ParametersObject) GetUserAgent() string {
-	return p.userAgent
+	return p.ua
 }
 
 // GetRawJSONParams returns json.RawMessage of JSON-RPC 2.0 invoked method params data.

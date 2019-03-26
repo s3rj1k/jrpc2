@@ -21,7 +21,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// notification does not send responses to client
-	if respObj.isNotification {
+	if respObj.notification {
 		// set response header to 204, (no content)
 		w.WriteHeader(http.StatusNoContent)
 
@@ -29,7 +29,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// write response code to HTTP writer interface
-	w.WriteHeader(respObj.httpResponseStatusCode)
+	w.WriteHeader(respObj.statusCode)
 
 	// write data to HTTP writer interface
 	_, err := w.Write(respObj.ResponseMarshal())

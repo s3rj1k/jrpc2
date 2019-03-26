@@ -15,7 +15,7 @@ func DefaultResponseObject() *ResponseObject {
 	respObj.Jsonrpc = JSONRPCVersion
 
 	// set default response status code
-	respObj.httpResponseStatusCode = http.StatusOK
+	respObj.statusCode = http.StatusOK
 
 	// init headers map, set response Content-Type header
 	respObj.headers = map[string]string{

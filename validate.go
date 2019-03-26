@@ -18,7 +18,7 @@ func (responseObject *ResponseObject) ValidateHTTPProtocolVersion(r *http.Reques
 		}
 
 		// set Response status code to 501 (not implemented)
-		responseObject.httpResponseStatusCode = http.StatusNotImplemented
+		responseObject.statusCode = http.StatusNotImplemented
 
 		return false
 	}
@@ -38,7 +38,7 @@ func (responseObject *ResponseObject) ValidateHTTPRequestMethod(r *http.Request)
 		}
 
 		// set Response status code to 405 (method not allowed)
-		responseObject.httpResponseStatusCode = http.StatusMethodNotAllowed
+		responseObject.statusCode = http.StatusMethodNotAllowed
 
 		// set Allow header
 		responseObject.headers["Allow"] = http.MethodPost
@@ -61,7 +61,7 @@ func (responseObject *ResponseObject) ValidateHTTPRequestHeaders(r *http.Request
 		}
 
 		// set Response status code to 415 (unsupported media type)
-		responseObject.httpResponseStatusCode = http.StatusUnsupportedMediaType
+		responseObject.statusCode = http.StatusUnsupportedMediaType
 
 		return false
 	}
@@ -75,7 +75,7 @@ func (responseObject *ResponseObject) ValidateHTTPRequestHeaders(r *http.Request
 		}
 
 		// set Response status code to 406 (not acceptable)
-		responseObject.httpResponseStatusCode = http.StatusNotAcceptable
+		responseObject.statusCode = http.StatusNotAcceptable
 
 		return false
 	}
@@ -95,7 +95,7 @@ func (responseObject *ResponseObject) ValidateJSONRPCVersionNumber(version strin
 		}
 
 		// set Response status code to 400 (bad request)
-		responseObject.httpResponseStatusCode = http.StatusBadRequest
+		responseObject.statusCode = http.StatusBadRequest
 
 		return false
 	}

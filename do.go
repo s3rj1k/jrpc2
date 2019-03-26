@@ -94,7 +94,7 @@ func (s *Service) Do(r *http.Request) *ResponseObject {
 	}
 
 	// parse ID member
-	idStr, errObj := ConvertIDtoString(reqObj.ID)
+	id, errObj := ConvertIDtoString(reqObj.ID)
 	if errObj != nil {
 		respObj.Error = errObj
 
@@ -106,16 +106,16 @@ func (s *Service) Do(r *http.Request) *ResponseObject {
 
 	// set notification flag
 	if reqObj.ID == nil {
-		respObj.isNotification = true
+		respObj.notification = true
 	}
 
 	// prepare parameters object for named method
 	paramsObj := ParametersObject{
-		remoteAddress: GetRealClientAddress(r),
-		userAgent:     r.UserAgent(),
-		idString:      idStr,
-		method:        reqObj.Method,
-		params:        reqObj.Params,
+		ra:     GetRealClientAddress(r),
+		ua:     r.UserAgent(),
+		id:     id,
+		method: reqObj.Method,
+		params: reqObj.Params,
 	}
 
 	// invoke named method with the provided parameters
