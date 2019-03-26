@@ -39,22 +39,18 @@ type ResponseObject struct {
 
 	// fields below are intentionally unexported
 	notification bool // specifies that this response is of Notification type
-
-	statusCode int // specifies HTTP response code to be set by server
+	statusCode   int  // specifies HTTP response code to be set by server
 
 	headers map[string]string // contains dynamic response headers
 }
 
 // ParametersObject represents input data for JSON-RPC 2.0 method.
 type ParametersObject struct {
-
 	// fields below are intentionally unexported
-	id string // contains request ID as string data type
-
+	id     string // contains request ID as string data type
 	method string // contains the name of the method that was invoked
 
 	ra string // contains remote address of request source
-
 	ua string // contains user agent of client who made request
 
 	params json.RawMessage // contains raw JSON params of invoked method
