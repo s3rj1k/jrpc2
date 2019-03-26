@@ -101,11 +101,10 @@ func (s *Service) Do(r *http.Request) *ResponseObject {
 		return respObj
 	}
 
-	// set response ID
-	respObj.ID = reqObj.ID
-
-	// set notification flag
-	if reqObj.ID == nil {
+	// set response ID or notification flag
+	if reqObj.ID != nil {
+		respObj.ID = reqObj.ID
+	} else {
 		respObj.notification = true
 	}
 
