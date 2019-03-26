@@ -98,25 +98,25 @@ func (s *Service) Do(r *http.Request) *ResponseObject {
 
 	// set response ID
 	respObj.ID = reqObj.ID
-	respObj.IDString = idStr
+	respObj.idString = idStr
 
 	// set notification flag
 	if reqObj.ID == nil {
-		respObj.IsNotification = true
+		respObj.isNotification = true
 	}
 
 	// prepare parameters object for named method
 	paramsObj := ParametersObject{
-		RemoteAddr:     GetRealClientAddress(r),
-		UserAgent:      r.UserAgent(),
-		IDString:       idStr,
-		IsNotification: respObj.IsNotification,
-		Method:         reqObj.Method,
-		Params:         reqObj.Params,
+		remoteAddress:  GetRealClientAddress(r),
+		userAgent:      r.UserAgent(),
+		idString:       idStr,
+		isNotification: respObj.isNotification,
+		method:         reqObj.Method,
+		params:         reqObj.Params,
 	}
 
 	// set method name in response object
-	respObj.Method = reqObj.Method
+	respObj.method = reqObj.Method
 
 	// invoke named method with the provided parameters
 	respObj.Result, errObj = s.Call(reqObj.Method, paramsObj)

@@ -26,14 +26,34 @@ func sanitizeRoute(route string) string {
 }
 
 // Create defines a new service instance.
-func Create(socket, route string, headers map[string]string) *Service {
+func Create(socket string) *Service {
 	return &Service{
 		Socket:            socket,
 		SocketPermissions: 0777,
-		Route:             sanitizeRoute(route),
+		Route:             sanitizeRoute("/"),
+		Headers:           make(map[string]string),
 		Methods:           make(map[string]Method),
-		Headers:           headers,
 	}
+}
+
+// SetSocket sets custom unix socket for service.
+func (s *Service) SetSocket(socket string) {
+	s.Socket = socket
+}
+
+// SetSocketPermissions sets custom unix socket permissions for service.
+func (s *Service) SetSocketPermissions(perm uint32) {
+	s.SocketPermissions = perm
+}
+
+// SetRoute sets custom route for service.
+func (s *Service) SetRoute(route string) {
+	s.Route = sanitizeRoute(route)
+}
+
+// SetHeaders sets custom headers for service.
+func (s *Service) SetHeaders(headers map[string]string) {
+	s.Headers = headers
 }
 
 // Register maps the provided method to the given name for later method calls.
@@ -45,7 +65,6 @@ func (s *Service) Register(name string, f func(ParametersObject) (interface{}, *
 
 // Start binds the RPCHandler to the server route and starts the http server.
 func (s *Service) Start() error {
-	http.HandleFunc(s.Route, s.RPCHandler)
 
 	var rerr error
 
@@ -65,7 +84,10 @@ func (s *Service) Start() error {
 		return err
 	}
 
-	err = http.Serve(us, nil)
+	mux := http.NewServeMux()
+	mux.Handle(s.Route, s)
+
+	err = http.Serve(us, mux)
 	if err != nil {
 		return err
 	}

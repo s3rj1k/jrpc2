@@ -10,7 +10,7 @@ func GetPositionalFloat64Params(data ParametersObject) ([]float64, *ErrorObject)
 
 	params := make([]float64, 0)
 
-	err := json.Unmarshal(data.Params, &params)
+	err := json.Unmarshal(data.GetRawJSONParams(), &params)
 	if err != nil {
 		return nil, &ErrorObject{
 			Code:    InvalidParamsCode,
@@ -28,7 +28,7 @@ func GetPositionalInt64Params(data ParametersObject) ([]int64, *ErrorObject) {
 
 	params := make([]int64, 0)
 
-	err := json.Unmarshal(data.Params, &params)
+	err := json.Unmarshal(data.GetRawJSONParams(), &params)
 	if err != nil {
 		return nil, &ErrorObject{
 			Code:    InvalidParamsCode,
@@ -46,7 +46,7 @@ func GetPositionalIntParams(data ParametersObject) ([]int, *ErrorObject) {
 
 	params := make([]int, 0)
 
-	err := json.Unmarshal(data.Params, &params)
+	err := json.Unmarshal(data.GetRawJSONParams(), &params)
 	if err != nil {
 		return nil, &ErrorObject{
 			Code:    InvalidParamsCode,
@@ -64,7 +64,7 @@ func GetPositionalUint64Params(data ParametersObject) ([]uint64, *ErrorObject) {
 
 	params := make([]uint64, 0)
 
-	err := json.Unmarshal(data.Params, &params)
+	err := json.Unmarshal(data.GetRawJSONParams(), &params)
 	if err != nil {
 		return nil, &ErrorObject{
 			Code:    InvalidParamsCode,
@@ -82,7 +82,7 @@ func GetPositionalUintParams(data ParametersObject) ([]uint, *ErrorObject) {
 
 	params := make([]uint, 0)
 
-	err := json.Unmarshal(data.Params, &params)
+	err := json.Unmarshal(data.GetRawJSONParams(), &params)
 	if err != nil {
 		return nil, &ErrorObject{
 			Code:    InvalidParamsCode,
@@ -100,7 +100,7 @@ func GetPositionalStringParams(data ParametersObject) ([]string, *ErrorObject) {
 
 	params := make([]string, 0)
 
-	err := json.Unmarshal(data.Params, &params)
+	err := json.Unmarshal(data.GetRawJSONParams(), &params)
 	if err != nil {
 		return nil, &ErrorObject{
 			Code:    InvalidParamsCode,

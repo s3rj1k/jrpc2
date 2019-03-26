@@ -18,7 +18,7 @@ func (responseObject *ResponseObject) ValidateHTTPProtocolVersion(r *http.Reques
 		}
 
 		// set Response status code to 501 (not implemented)
-		responseObject.HTTPResponseStatusCode = http.StatusNotImplemented
+		responseObject.httpResponseStatusCode = http.StatusNotImplemented
 
 		return false
 	}
@@ -38,10 +38,10 @@ func (responseObject *ResponseObject) ValidateHTTPRequestMethod(r *http.Request)
 		}
 
 		// set Response status code to 405 (method not allowed)
-		responseObject.HTTPResponseStatusCode = http.StatusMethodNotAllowed
+		responseObject.httpResponseStatusCode = http.StatusMethodNotAllowed
 
 		// set Allow header
-		responseObject.Headers["Allow"] = http.MethodPost
+		responseObject.headers["Allow"] = http.MethodPost
 
 		return false
 	}
@@ -61,7 +61,7 @@ func (responseObject *ResponseObject) ValidateHTTPRequestHeaders(r *http.Request
 		}
 
 		// set Response status code to 415 (unsupported media type)
-		responseObject.HTTPResponseStatusCode = http.StatusUnsupportedMediaType
+		responseObject.httpResponseStatusCode = http.StatusUnsupportedMediaType
 
 		return false
 	}
@@ -75,7 +75,7 @@ func (responseObject *ResponseObject) ValidateHTTPRequestHeaders(r *http.Request
 		}
 
 		// set Response status code to 406 (not acceptable)
-		responseObject.HTTPResponseStatusCode = http.StatusNotAcceptable
+		responseObject.httpResponseStatusCode = http.StatusNotAcceptable
 
 		return false
 	}

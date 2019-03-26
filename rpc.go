@@ -16,6 +16,15 @@ func (s *Service) Call(name string, data ParametersObject) (interface{}, *ErrorO
 		}
 	}
 
+	// check that request method member is not empty string
+	if strings.TrimSpace(name) == "" {
+		return nil, &ErrorObject{
+			Code:    InvalidRequestCode,
+			Message: InvalidRequestMessage,
+			Data:    "method name is invalid",
+		}
+	}
+
 	// lookup method inside methods map
 	method, ok := s.Methods[name]
 	if !ok {

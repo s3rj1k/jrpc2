@@ -14,16 +14,16 @@ func DefaultResponseObject() *ResponseObject {
 	respObj.Jsonrpc = JSONRPCVersion
 
 	// set ID string to null
-	respObj.IDString = "null"
+	respObj.idString = "null"
 
 	// set default response status code
-	respObj.HTTPResponseStatusCode = http.StatusOK
+	respObj.httpResponseStatusCode = http.StatusOK
 
 	// init headers map
-	respObj.Headers = make(map[string]string)
+	respObj.headers = make(map[string]string)
 
 	// set response Content-Type header
-	respObj.Headers["Content-Type"] = "application/json"
+	respObj.headers["Content-Type"] = "application/json"
 
 	return respObj
 }

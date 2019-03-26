@@ -37,35 +37,63 @@ type ResponseObject struct {
 	// ID contains the client established request id or null
 	ID *json.RawMessage `json:"id,omitempty"`
 
-	// IDString contains request ID as string data type
-	IDString string `json:"-"`
-	// IsNotification specifies that this response is of Notification type
-	IsNotification bool `json:"-"`
-	// Method contains the name of the method that was invoked
-	Method string `json:"-"`
-	// HTTPResponseStatusCode specifies http response code to be set by server
-	HTTPResponseStatusCode int `json:"-"`
-	// Headers contains response headers
-	Headers map[string]string `json:"-"`
+	// fields below are intentionally unexported
+	idString string // contains request ID as string data type
+
+	isNotification bool // specifies that this response is of Notification type
+
+	method string // contains the name of the method that was invoked
+
+	httpResponseStatusCode int // specifies http response code to be set by server
+
+	headers map[string]string // contains response headers
 }
 
 // ParametersObject represents input data for JSON-RPC 2.0 method.
 type ParametersObject struct {
-	// IsNotification specifies that this response is of Notification type
-	IsNotification bool `json:"-"`
-	// IDString contains request ID as string data type
-	IDString string `json:"-"`
 
-	// Method contains the name of the method to be invoked
-	Method string `json:"-"`
+	// fields below are intentionally unexported
+	idString string // contains request ID as string data type
 
-	// RemoteAddr contains remote address of request source
-	RemoteAddr string `json:"-"`
-	// UserAgent contains user agent of client who made request
-	UserAgent string `json:"-"`
+	isNotification bool // specifies that this response is of Notification type
 
-	// Params contains raw json params data
-	Params json.RawMessage
+	method string // contains the name of the method that was invoked
+
+	remoteAddress string // contains remote address of request source
+
+	userAgent string // contains user agent of client who made request
+
+	params json.RawMessage // contains raw JSON params of invoked method
+}
+
+// IsNotification returns true than this response is of Notification type.
+func (p ParametersObject) IsNotification() bool {
+	return p.isNotification
+}
+
+// GetID returns request ID as string data type.
+func (p ParametersObject) GetID() string {
+	return p.idString
+}
+
+// GetMethodName returns invoked request Method name as string data type.
+func (p ParametersObject) GetMethodName() string {
+	return p.method
+}
+
+// GetRemoteAddress returns remote address of request source.
+func (p ParametersObject) GetRemoteAddress() string {
+	return p.remoteAddress
+}
+
+// GetUserAgent returns user agent of client who made request.
+func (p ParametersObject) GetUserAgent() string {
+	return p.userAgent
+}
+
+// GetRawJSONParams returns json.RawMessage of JSON-RPC 2.0 invoked method params data.
+func (p ParametersObject) GetRawJSONParams() json.RawMessage {
+	return p.params
 }
 
 // Method represents an JSON-RPC 2.0 method.

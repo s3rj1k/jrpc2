@@ -39,8 +39,8 @@ type CopyParamsDataResponse struct {
 
 	Method string `json:"Method"`
 
-	RemoteAddr string `json:"RemoteAddr"`
-	UserAgent  string `json:"UserAgent"`
+	RemoteAddress string `json:"RemoteAddress"`
+	UserAgent     string `json:"UserAgent"`
 
 	Params json.RawMessage `json:"Params"`
 }
@@ -54,12 +54,12 @@ func CopyParamsData(data ParametersObject) (interface{}, *ErrorObject) {
 
 	var out CopyParamsDataResponse
 
-	out.RemoteAddr = data.RemoteAddr
-	out.UserAgent = data.UserAgent
-	out.IDString = data.IDString
-	out.IsNotification = data.IsNotification
-	out.Method = data.Method
-	out.Params = data.Params
+	out.RemoteAddress = data.GetRemoteAddress()
+	out.UserAgent = data.GetUserAgent()
+	out.IDString = data.GetID()
+	out.IsNotification = data.IsNotification()
+	out.Method = data.GetMethodName()
+	out.Params = data.GetRawJSONParams()
 
 	return out, nil
 }
@@ -68,7 +68,7 @@ func Subtract(data ParametersObject) (interface{}, *ErrorObject) {
 
 	paramObj := new(SubtractParams)
 
-	err := json.Unmarshal(data.Params, paramObj)
+	err := json.Unmarshal(data.GetRawJSONParams(), paramObj)
 	if err != nil {
 
 		errObj := &ErrorObject{
@@ -154,9 +154,9 @@ func init() {
 	}
 
 	go func() {
-		s := Create(
-			us,
-			endpoint,
+		s := Create(us)
+		s.SetRoute(endpoint)
+		s.SetHeaders(
 			map[string]string{
 				"Server":                        "JSON-RPC/2.0 (Golang)",
 				"Access-Control-Allow-Origin":   "*",
@@ -599,8 +599,9 @@ func TestInternalParamsPassthrough(t *testing.T) {
 	if _, ok := result.Result.(map[string]interface{}); !ok {
 		t.Fatal("expected Result type to be 'map[string]interface{}'")
 	}
-	if val, ok := result.Result.(map[string]interface{})["RemoteAddr"].(string); !ok || !strings.HasPrefix(val, "127.0.0.1") {
-		t.Fatal("expected RemoteAddr to contain '127.0.0.1'")
+
+	if val, ok := result.Result.(map[string]interface{})["RemoteAddress"].(string); !ok || !strings.HasPrefix(val, "127.0.0.1") {
+		t.Fatal("expected RemoteAddress to contain '127.0.0.1'")
 	}
 	if val, ok := result.Result.(map[string]interface{})["UserAgent"].(string); !ok || !strings.EqualFold(val, "Go-http-client/1.1") {
 		t.Fatal("expected UserAgent to be 'Go-http-client/1.1'")

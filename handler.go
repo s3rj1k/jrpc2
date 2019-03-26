@@ -4,8 +4,8 @@ import (
 	"net/http"
 )
 
-// RPCHandler handles incoming RPC client requests, generates responses.
-func (s *Service) RPCHandler(w http.ResponseWriter, r *http.Request) {
+// ServeHTTP implements needed interface for http library, handles incoming RPC client requests, generates responses.
+func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// get response struct
 	respObj := s.Do(r)
@@ -16,19 +16,19 @@ func (s *Service) RPCHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// set response headers
-	for header, value := range respObj.Headers {
+	for header, value := range respObj.headers {
 		w.Header().Set(header, value)
 	}
 
 	// notification does not send responses to client
-	if respObj.IsNotification {
+	if respObj.isNotification {
 		// set response header to 204, (no content)
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
 	// write response code to HTTP writer interface
-	w.WriteHeader(respObj.HTTPResponseStatusCode)
+	w.WriteHeader(respObj.httpResponseStatusCode)
 
 	// write data to HTTP writer interface
 	_, err := w.Write(respObj.ResponseMarshal())
