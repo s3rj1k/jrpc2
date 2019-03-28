@@ -32,7 +32,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(respObj.statusCode)
 
 	// write data to HTTP writer interface
-	_, err := w.Write(respObj.ResponseMarshal())
+	_, err := w.Write(respObj.Marshal())
 	if err != nil { // this should never happen
 		w.WriteHeader(http.StatusInternalServerError)
 

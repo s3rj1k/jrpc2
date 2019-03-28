@@ -7,15 +7,6 @@ import (
 // Call invokes the named method with the provided parameters.
 func (s *Service) Call(name string, data ParametersObject) (interface{}, *ErrorObject) {
 
-	// check that request method member is not rpc-internal method
-	if strings.HasPrefix(strings.ToLower(name), "rpc.") {
-		return nil, &ErrorObject{
-			Code:    InvalidRequestCode,
-			Message: InvalidRequestMessage,
-			Data:    "method cannot match the pattern rpc.*",
-		}
-	}
-
 	// check that request method member is not empty string
 	if strings.TrimSpace(name) == "" {
 		return nil, &ErrorObject{
@@ -25,8 +16,22 @@ func (s *Service) Call(name string, data ParametersObject) (interface{}, *ErrorO
 		}
 	}
 
+	// check that request method member is not rpc-internal method
+	if strings.HasPrefix(strings.ToLower(name), "rpc.") && !s.proxy {
+		return nil, &ErrorObject{
+			Code:    InvalidRequestCode,
+			Message: InvalidRequestMessage,
+			Data:    "method cannot match the pattern rpc.*",
+		}
+	}
+
+	// route to internal proxy method
+	if s.proxy {
+		name = "rpc.proxy"
+	}
+
 	// lookup method inside methods map
-	method, ok := s.methods[name]
+	f, ok := s.methods[name]
 	if !ok {
 		return nil, &ErrorObject{
 			Code:    MethodNotFoundCode,
@@ -35,7 +40,7 @@ func (s *Service) Call(name string, data ParametersObject) (interface{}, *ErrorO
 	}
 
 	// noncallable named method
-	if method.Method == nil {
+	if f.Method == nil {
 		return nil, &ErrorObject{
 			Code:    InternalErrorCode,
 			Message: InternalErrorMessage,
@@ -43,5 +48,5 @@ func (s *Service) Call(name string, data ParametersObject) (interface{}, *ErrorO
 		}
 	}
 
-	return method.Method(data)
+	return f.Method(data)
 }

@@ -20,11 +20,27 @@ import (
 	"github.com/s3rj1k/jrpc2/client"
 )
 
-const us = "/tmp/jrpc2.socket"
-const endpoint = "/jrpc"
+const serverSocket = "/tmp/jrpc2_server.socket"
+const proxySocket = "/tmp/jrpc2_proxy.socket"
 
-var id, x, y int        // nolint:gochecknoglobals
-var r *strings.Replacer // nolint:gochecknoglobals
+const serverRoute = "/jrpc"
+const proxyRoute = "/proxy"
+
+// nolint:gochecknoglobals
+var (
+	serverURL = fmt.Sprintf("http://localhost%s", serverRoute)
+	proxyURL  = fmt.Sprintf("http://localhost%s", proxyRoute)
+
+	postHeaders = map[string]string{
+		"Accept":       "application/json", // set Accept header
+		"Content-Type": "application/json", // set Content-Type header
+		"X-Real-IP":    "127.0.0.1",        // set X-Real-IP (upstream reverse proxy)
+	}
+
+	id, x, y int
+
+	r *strings.Replacer
+)
 
 type Result struct {
 	Jsonrpc string       `json:"jsonrpc"`
@@ -144,16 +160,22 @@ func init() {
 	)
 
 	// Remove old Unix Socket
-	if _, err := os.Stat(us); !os.IsNotExist(err) {
-		err := os.Remove(us)
+	if _, err := os.Stat(serverSocket); !os.IsNotExist(err) {
+		err := os.Remove(serverSocket)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+	if _, err := os.Stat(proxySocket); !os.IsNotExist(err) {
+		err := os.Remove(proxySocket)
 		if err != nil {
 			log.Fatalln(err)
 		}
 	}
 
 	go func() {
-		s := Create(us)
-		s.SetRoute(endpoint)
+		s := Create(serverSocket)
+		s.SetRoute(serverRoute)
 		s.SetHeaders(
 			map[string]string{
 				"Server":                        "JSON-RPC/2.0 (Golang)",
@@ -174,33 +196,44 @@ func init() {
 		}
 	}()
 
+	go func() {
+		s := CreateProxy(proxySocket)
+		s.SetRoute(proxyRoute)
+		s.SetHeaders(
+			map[string]string{
+				"Server":                        "JSON-RPC/2.0 Proxy (Golang)",
+				"Access-Control-Allow-Origin":   "*",
+				"Access-Control-Expose-Headers": "Content-Type",
+				"Access-Control-Allow-Methods":  "POST",
+				"Access-Control-Allow-Headers":  "Content-Type",
+			},
+		)
+
+		s.RegisterProxy(CopyParamsData)
+
+		err := s.Start()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
 	// Wait for Unix Socket to be created
 	for {
 		time.Sleep(1 * time.Millisecond)
-		if _, err := os.Stat(us); !os.IsNotExist(err) {
+		if _, err := os.Stat(serverSocket); !os.IsNotExist(err) {
+			break
+		}
+	}
+	for {
+		time.Sleep(1 * time.Millisecond)
+		if _, err := os.Stat(proxySocket); !os.IsNotExist(err) {
 			break
 		}
 	}
 }
 
-// sendTestRequest is a wrapper for sending request to mock server
-func sendTestRequest(request string) (*http.Response, error) {
-
-	// full JSON-RPC 2.0 URL
-	url := fmt.Sprintf("http://localhost%s", endpoint)
-
-	headers := map[string]string{
-		"Accept":       "application/json", // set Accept header
-		"Content-Type": "application/json", // set Content-Type header
-		"X-Real-IP":    "127.0.0.1",        // set X-Real-IP (upstream reverse proxy)
-	}
-
-	// call wrapper
-	return httpPost(url, request, headers)
-}
-
 // httpPost is a wrapper for HTTP POST
-func httpPost(url, request string, headers map[string]string) (*http.Response, error) {
+func httpPost(url, request, socket string, headers map[string]string) (*http.Response, error) {
 
 	// request data
 	buf := bytes.NewBuffer([]byte(r.Replace(request)))
@@ -209,7 +242,7 @@ func httpPost(url, request string, headers map[string]string) (*http.Response, e
 	httpc := http.Client{
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				return net.Dial("unix", us)
+				return net.Dial("unix", socket)
 			},
 		},
 	}
@@ -233,7 +266,7 @@ func TestClientLibrary(t *testing.T) {
 
 	var result int
 
-	c := client.GetSocketConfig(us, endpoint)
+	c := client.GetSocketConfig(serverSocket, serverRoute)
 
 	rawMsg, err := c.Call("subtract", []byte("{\"X\": 45, \"Y\": 3}"))
 	if err != nil {
@@ -261,19 +294,16 @@ func TestNonPOSTRequestType(t *testing.T) {
 
 	var result Result
 
-	// full JSON-RPC 2.0 URL
-	url := fmt.Sprintf("http://localhost%s", endpoint)
-
 	// prepare default http client config over Unix Socket
 	httpc := http.Client{
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				return net.Dial("unix", us)
+				return net.Dial("unix", serverSocket)
 			},
 		},
 	}
 
-	resp, err := httpc.Get(url)
+	resp, err := httpc.Get(serverURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -321,16 +351,15 @@ func TestRequestHeaderWrongContentType(t *testing.T) {
 
 	var result Result
 
-	// full JSON-RPC 2.0 URL
-	url := fmt.Sprintf("http://localhost%s", endpoint)
-
-	headers := map[string]string{
-		"Accept":       "application/json",      // set Accept header
-		"Content-Type": "x-www-form-urlencoded", // set Content-Type header
-	}
-
-	// call wrapper
-	resp, err := httpPost(url, `{}`, headers)
+	resp, err := httpPost(
+		serverURL,
+		`{}`,
+		serverSocket,
+		map[string]string{
+			"Accept":       "application/json",      // set Accept header
+			"Content-Type": "x-www-form-urlencoded", // set Content-Type header
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -375,16 +404,15 @@ func TestRequestHeaderWrongAccept(t *testing.T) {
 
 	var result Result
 
-	// full JSON-RPC 2.0 URL
-	url := fmt.Sprintf("http://localhost%s", endpoint)
-
-	headers := map[string]string{
-		"Accept":       "x-www-form-urlencoded", // set Accept header
-		"Content-Type": "application/json",      // set Content-Type header
-	}
-
-	// call wrapper
-	resp, err := httpPost(url, `{}`, headers)
+	resp, err := httpPost(
+		serverURL,
+		`{}`,
+		serverSocket,
+		map[string]string{
+			"Accept":       "x-www-form-urlencoded", // set Accept header
+			"Content-Type": "application/json",      // set Content-Type header
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -427,16 +455,17 @@ func TestRequestHeaderWrongAccept(t *testing.T) {
 
 func TestWrongEndpoint(t *testing.T) {
 
-	// wrong URL (404 response) for non-root endpoint, https://golang.org/pkg/net/http/#ServeMux
-	url := fmt.Sprintf("http://localhost%s", "/WRONG")
+	resp, err := httpPost(
+		// wrong URL (404 response) for non-root endpoint, https://golang.org/pkg/net/http/#ServeMux
+		fmt.Sprintf("http://localhost%s", "/WRONG"),
+		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
+		serverSocket,
+		map[string]string{
+			"Accept":       "application/json", // set Accept header
+			"Content-Type": "application/json", // set Content-Type header
+		},
+	)
 
-	headers := map[string]string{
-		"Accept":       "application/json", // set Accept header
-		"Content-Type": "application/json", // set Content-Type header
-	}
-
-	// call wrapper
-	resp, err := httpPost(url, `{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`, headers)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -448,18 +477,23 @@ func TestWrongEndpoint(t *testing.T) {
 		}
 	}()
 
-	if resp.StatusCode != http.StatusNotFound && len(endpoint) > 1 {
+	if resp.StatusCode != http.StatusNotFound && len(serverRoute) > 1 {
 		t.Fatalf("expected HTTP status code to be '%d'", http.StatusNotFound)
 	}
 
-	if resp.StatusCode != http.StatusOK && len(endpoint) == 0 {
+	if resp.StatusCode != http.StatusOK && len(serverRoute) == 0 {
 		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
 }
 
 func TestResponseHeaders(t *testing.T) {
 
-	resp, err := sendTestRequest(`{}`)
+	resp, err := httpPost(
+		serverURL,
+		`{}`,
+		serverSocket,
+		postHeaders,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -483,7 +517,12 @@ func TestIDStringType(t *testing.T) {
 
 	var result Result
 
-	resp, err := sendTestRequest(`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`)
+	resp, err := httpPost(
+		serverURL,
+		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
+		serverSocket,
+		postHeaders,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -522,7 +561,12 @@ func TestIDNumberType(t *testing.T) {
 
 	var result Result
 
-	resp, err := sendTestRequest(`{"jsonrpc": "2.0", "method": "update", "id": 42}`)
+	resp, err := httpPost(
+		serverURL,
+		`{"jsonrpc": "2.0", "method": "update", "id": 42}`,
+		serverSocket,
+		postHeaders,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -561,7 +605,12 @@ func TestInternalParamsPassthrough(t *testing.T) {
 
 	var result Result
 
-	resp, err := sendTestRequest(`{"jsonrpc": "2.0", "method": "copy", "params": 42, "id": 42}`)
+	resp, err := httpPost(
+		serverURL,
+		`{"jsonrpc": "2.0", "method": "copy", "params": 42, "id": 42}`,
+		serverSocket,
+		postHeaders,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -575,6 +624,75 @@ func TestInternalParamsPassthrough(t *testing.T) {
 
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
+	}
+
+	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.Jsonrpc != JSONRPCVersion {
+		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
+	}
+	if val, ok := result.ID.(float64); !ok || val != float64(42) {
+		t.Fatal("expected ID to be '42'")
+	}
+	if result.Error != nil {
+		t.Fatal("expected Error to be 'nil'")
+	}
+	if result.Result == nil {
+		t.Fatal("expected Result to be not 'nil'")
+	}
+	if _, ok := result.Result.(map[string]interface{}); !ok {
+		t.Fatal("expected Result type to be 'map[string]interface{}'")
+	}
+
+	if val, ok := result.Result.(map[string]interface{})["RemoteAddress"].(string); !ok || !strings.HasPrefix(val, "127.0.0.1") {
+		t.Fatal("expected RemoteAddress to contain '127.0.0.1'")
+	}
+	if val, ok := result.Result.(map[string]interface{})["UserAgent"].(string); !ok || !strings.EqualFold(val, "Go-http-client/1.1") {
+		t.Fatal("expected UserAgent to be 'Go-http-client/1.1'")
+	}
+	if val, ok := result.Result.(map[string]interface{})["ID"].(string); !ok || val != "42" {
+		t.Fatal("expected ID to be '42'")
+	}
+	if val, ok := result.Result.(map[string]interface{})["ID"].(string); !ok || val != "42" {
+		t.Fatal("expected ID to be '42'")
+	}
+	if val, ok := result.Result.(map[string]interface{})["Method"].(string); !ok || val != "copy" {
+		t.Fatal("expected Method to be 'copy'")
+	}
+	if val, ok := result.Result.(map[string]interface{})["Params"].(float64); !ok || val != float64(42) {
+		t.Fatal("expected Params to be '42'")
+	}
+}
+
+func TestProxyInternalParamsPassthrough(t *testing.T) {
+
+	var result Result
+
+	resp, err := httpPost(
+		proxyURL,
+		`{"jsonrpc": "2.0", "method": "copy", "params": 42, "id": 42}`,
+		proxySocket,
+		postHeaders,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		err = resp.Body.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
+	}
+	if v := resp.Header.Get("Server"); v != "JSON-RPC/2.0 Proxy (Golang)" {
+		t.Fatal("got unexpected Server value")
 	}
 
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&result)
@@ -632,7 +750,12 @@ func TestIDTypeError(t *testing.T) {
 
 		var result Result
 
-		resp, err := sendTestRequest(el)
+		resp, err := httpPost(
+			serverURL,
+			el,
+			serverSocket,
+			postHeaders,
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -678,7 +801,13 @@ func TestNonExistentMethod(t *testing.T) {
 
 	var result Result
 
-	resp, err := sendTestRequest(`{"jsonrpc": "2.0", "method": "foobar", "id": #ID}`)
+	resp, err := httpPost(
+		serverURL,
+		`{"jsonrpc": "2.0", "method": "foobar", "id": #ID}`,
+		serverSocket,
+		postHeaders,
+	)
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -720,7 +849,12 @@ func TestInvalidMethodObjectType(t *testing.T) {
 
 	var result Result
 
-	resp, err := sendTestRequest(`{"jsonrpc": "2.0", "method": 1, "params": "bar", "id": #ID}`)
+	resp, err := httpPost(
+		serverURL,
+		`{"jsonrpc": "2.0", "method": 1, "params": "bar", "id": #ID}`,
+		serverSocket,
+		postHeaders,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -765,7 +899,12 @@ func TestNamedParameters(t *testing.T) {
 
 	var result Result
 
-	resp, err := sendTestRequest(`{"jsonrpc": "2.0", "method": "subtract", "params": {"X": #X, "Y": #Y}, "id": #ID}`)
+	resp, err := httpPost(
+		serverURL,
+		`{"jsonrpc": "2.0", "method": "subtract", "params": {"X": #X, "Y": #Y}, "id": #ID}`,
+		serverSocket,
+		postHeaders,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -813,7 +952,12 @@ func TestNotification(t *testing.T) {
 
 		var result Result
 
-		resp, err := sendTestRequest(el)
+		resp, err := httpPost(
+			serverURL,
+			el,
+			serverSocket,
+			postHeaders,
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -845,7 +989,12 @@ func TestBatchNotifications(t *testing.T) {
 			{"jsonrpc": "2.0", "method": "subtract", "params": {"X": #Y, "Y": #X}}
 		]`
 
-	resp, err := sendTestRequest(req)
+	resp, err := httpPost(
+		serverURL,
+		req,
+		serverSocket,
+		postHeaders,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -890,7 +1039,12 @@ func TestPositionalParamters(t *testing.T) {
 
 	var result Result
 
-	resp, err := sendTestRequest(`{"jsonrpc": "2.0", "method": "subtract", "params": [#X, #Y], "id": #ID}`)
+	resp, err := httpPost(
+		serverURL,
+		`{"jsonrpc": "2.0", "method": "subtract", "params": [#X, #Y], "id": #ID}`,
+		serverSocket,
+		postHeaders,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -932,7 +1086,12 @@ func TestPositionalParamtersError(t *testing.T) {
 
 	var result Result
 
-	resp, err := sendTestRequest(`{"jsonrpc": "2.0", "method": "subtract", "params": [999, 999], "id": #ID}`)
+	resp, err := httpPost(
+		serverURL,
+		`{"jsonrpc": "2.0", "method": "subtract", "params": [999, 999], "id": #ID}`,
+		serverSocket,
+		postHeaders,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -980,7 +1139,12 @@ func TestInvalidJSON(t *testing.T) {
 
 	var result Result
 
-	resp, err := sendTestRequest(`{"jsonrpc": "2.0", "method": "update, "params": "bar", "baz]`)
+	resp, err := httpPost(
+		serverURL,
+		`{"jsonrpc": "2.0", "method": "update, "params": "bar", "baz]`,
+		serverSocket,
+		postHeaders,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1030,7 +1194,12 @@ func TestBatchInvalidJSON(t *testing.T) {
 			{"jsonrpc": "2.0", "method"
 		]`
 
-	resp, err := sendTestRequest(req)
+	resp, err := httpPost(
+		serverURL,
+		req,
+		serverSocket,
+		postHeaders,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1075,7 +1244,12 @@ func TestBatchEmptyArray(t *testing.T) {
 
 	var result Result
 
-	resp, err := sendTestRequest(`[]`)
+	resp, err := httpPost(
+		serverURL,
+		`[]`,
+		serverSocket,
+		postHeaders,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1123,7 +1297,12 @@ func TestInvalidBatch(t *testing.T) {
 
 	var results []Result
 
-	resp, err := sendTestRequest(`[4, 2]`)
+	resp, err := httpPost(
+		serverURL,
+		`[4, 2]`,
+		serverSocket,
+		postHeaders,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
