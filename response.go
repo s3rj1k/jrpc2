@@ -22,6 +22,8 @@ type ResponseObject struct {
 	statusCode   int  // specifies HTTP response code to be set by server
 
 	headers map[string]string // contains dynamic response headers
+
+	r *http.Request // contains pointer to HTTP request object
 }
 
 // DefaultResponseObject initializes default response object.
