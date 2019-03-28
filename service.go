@@ -2,32 +2,41 @@ package jrpc2
 
 import (
 	"fmt"
-	"net"
-	"net/http"
-	"os"
 	"strings"
-	"syscall"
 )
+
+// Service represents a JSON-RPC 2.0 capable HTTP server.
+type Service struct {
+	// fields below are intentionally unexported
+	socket            string // socket is the Unix Socket Path for the server
+	socketPermissions uint32 // SocketPermissions is Unix Socket permission for chmod
+
+	route string // route is the Path to the JSON-RPC API
+
+	methods map[string]Method // methods contains the mapping of registered methods
+
+	headers map[string]string // headers contains custom response headers
+}
 
 // Create defines a new service instance.
 func Create(socket string) *Service {
 	return &Service{
-		Socket:            socket,
-		SocketPermissions: 0777,
-		Route:             "/",
-		Headers:           make(map[string]string),
-		Methods:           make(map[string]Method),
+		socket:            socket,
+		socketPermissions: 0777,
+		route:             "/",
+		headers:           make(map[string]string),
+		methods:           make(map[string]Method),
 	}
 }
 
 // SetSocket sets custom unix socket for service.
 func (s *Service) SetSocket(socket string) {
-	s.Socket = socket
+	s.socket = socket
 }
 
 // SetSocketPermissions sets custom unix socket permissions for service.
 func (s *Service) SetSocketPermissions(perm uint32) {
-	s.SocketPermissions = perm
+	s.socketPermissions = perm
 }
 
 // SetRoute sets custom route for service.
@@ -43,56 +52,17 @@ func (s *Service) SetRoute(route string) {
 		route = fmt.Sprintf("/%s", route)
 	}
 
-	s.Route = route
+	s.route = route
 }
 
 // SetHeaders sets custom headers for service.
 func (s *Service) SetHeaders(headers map[string]string) {
-	s.Headers = headers
+	s.headers = headers
 }
 
 // Register maps the provided method to the given name for later method calls.
 func (s *Service) Register(name string, f func(ParametersObject) (interface{}, *ErrorObject)) {
-	s.Methods[name] = Method{
+	s.methods[name] = Method{
 		Method: f,
 	}
-}
-
-// Start binds the RPCHandler to the server route and starts the http server.
-func (s *Service) Start() error {
-
-	var rerr error
-
-	if _, err := os.Stat(s.Socket); !os.IsNotExist(err) {
-		err := syscall.Unlink(s.Socket)
-		if err != nil {
-			return err
-		}
-	}
-
-	us, err := net.Listen("unix", s.Socket)
-	if err != nil {
-		return err
-	}
-
-	if err = os.Chmod(s.Socket, os.FileMode(s.SocketPermissions)); err != nil {
-		return err
-	}
-
-	mux := http.NewServeMux()
-	mux.Handle(s.Route, s)
-
-	err = http.Serve(us, mux)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		err := us.Close()
-		if err != nil {
-			rerr = err
-		}
-	}()
-
-	return rerr
 }

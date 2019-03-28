@@ -4,110 +4,39 @@ import (
 	"encoding/json"
 )
 
-// GetPositionalFloat64Params parses positional param member of JSON-RPC 2.0 request
-// that is know to contain float64 array.
-func GetPositionalFloat64Params(data ParametersObject) ([]float64, *ErrorObject) {
+// ParametersObject represents input data for JSON-RPC 2.0 method.
+type ParametersObject struct {
+	// fields below are intentionally unexported
+	id     string // contains request ID as string data type
+	method string // contains the name of the method that was invoked
 
-	params := make([]float64, 0)
+	ra string // contains remote address of request source
+	ua string // contains user agent of client who made request
 
-	err := json.Unmarshal(data.GetRawJSONParams(), &params)
-	if err != nil {
-		return nil, &ErrorObject{
-			Code:    InvalidParamsCode,
-			Message: InvalidParamsMessage,
-			Data:    err.Error(),
-		}
-	}
-
-	return params, nil
+	params json.RawMessage // contains raw JSON params of invoked method
 }
 
-// GetPositionalInt64Params parses positional param member of JSON-RPC 2.0 request
-// that is know to contain int64 array.
-func GetPositionalInt64Params(data ParametersObject) ([]int64, *ErrorObject) {
-
-	params := make([]int64, 0)
-
-	err := json.Unmarshal(data.GetRawJSONParams(), &params)
-	if err != nil {
-		return nil, &ErrorObject{
-			Code:    InvalidParamsCode,
-			Message: InvalidParamsMessage,
-			Data:    err.Error(),
-		}
-	}
-
-	return params, nil
+// GetID returns request ID as string data type.
+func (p ParametersObject) GetID() string {
+	return p.id
 }
 
-// GetPositionalIntParams parses positional param member of JSON-RPC 2.0 request
-// that is know to contain int array.
-func GetPositionalIntParams(data ParametersObject) ([]int, *ErrorObject) {
-
-	params := make([]int, 0)
-
-	err := json.Unmarshal(data.GetRawJSONParams(), &params)
-	if err != nil {
-		return nil, &ErrorObject{
-			Code:    InvalidParamsCode,
-			Message: InvalidParamsMessage,
-			Data:    err.Error(),
-		}
-	}
-
-	return params, nil
+// GetMethodName returns invoked request Method name as string data type.
+func (p ParametersObject) GetMethodName() string {
+	return p.method
 }
 
-// GetPositionalUint64Params parses positional param member of JSON-RPC 2.0 request
-// that is know to contain int64 array.
-func GetPositionalUint64Params(data ParametersObject) ([]uint64, *ErrorObject) {
-
-	params := make([]uint64, 0)
-
-	err := json.Unmarshal(data.GetRawJSONParams(), &params)
-	if err != nil {
-		return nil, &ErrorObject{
-			Code:    InvalidParamsCode,
-			Message: InvalidParamsMessage,
-			Data:    err.Error(),
-		}
-	}
-
-	return params, nil
+// GetRemoteAddress returns remote address of request source.
+func (p ParametersObject) GetRemoteAddress() string {
+	return p.ra
 }
 
-// GetPositionalUintParams parses positional param member of JSON-RPC 2.0 request
-// that is know to contain uint array.
-func GetPositionalUintParams(data ParametersObject) ([]uint, *ErrorObject) {
-
-	params := make([]uint, 0)
-
-	err := json.Unmarshal(data.GetRawJSONParams(), &params)
-	if err != nil {
-		return nil, &ErrorObject{
-			Code:    InvalidParamsCode,
-			Message: InvalidParamsMessage,
-			Data:    err.Error(),
-		}
-	}
-
-	return params, nil
+// GetUserAgent returns user agent of client who made request.
+func (p ParametersObject) GetUserAgent() string {
+	return p.ua
 }
 
-// GetPositionalStringParams parses positional param member of JSON-RPC 2.0 request
-// that is know to contain string array.
-func GetPositionalStringParams(data ParametersObject) ([]string, *ErrorObject) {
-
-	params := make([]string, 0)
-
-	err := json.Unmarshal(data.GetRawJSONParams(), &params)
-	if err != nil {
-		return nil, &ErrorObject{
-			Code:    InvalidParamsCode,
-			Message: InvalidParamsMessage,
-			Data:    err.Error(),
-		}
-	}
-
-	return params, nil
+// GetRawJSONParams returns json.RawMessage of JSON-RPC 2.0 invoked method params data.
+func (p ParametersObject) GetRawJSONParams() json.RawMessage {
+	return p.params
 }

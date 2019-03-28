@@ -11,7 +11,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	respObj := s.Do(r)
 
 	// set custom response headers
-	for header, value := range s.Headers {
+	for header, value := range s.headers {
 		w.Header().Set(header, value)
 	}
 

@@ -26,7 +26,7 @@ func (s *Service) Call(name string, data ParametersObject) (interface{}, *ErrorO
 	}
 
 	// lookup method inside methods map
-	method, ok := s.Methods[name]
+	method, ok := s.methods[name]
 	if !ok {
 		return nil, &ErrorObject{
 			Code:    MethodNotFoundCode,
