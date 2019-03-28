@@ -7,8 +7,7 @@ import (
 // ParametersObject represents input data for JSON-RPC 2.0 method.
 type ParametersObject struct {
 	// fields below are intentionally unexported
-	id    string           // contains request ID as string data type
-	rawID *json.RawMessage // contains request ID as JSON Raw Message data type
+	id string // contains request ID as string data type
 
 	method string // contains the name of the method that was invoked
 
@@ -23,9 +22,14 @@ func (p ParametersObject) GetID() string {
 	return p.id
 }
 
-// GetRawID returns request ID as *json.RawMessage data type.
-func (p ParametersObject) GetRawID() *json.RawMessage {
-	return p.rawID
+// GetRawID returns request ID as json.RawMessage data type.
+func (p ParametersObject) GetRawID() json.RawMessage {
+
+	if p.id == "null" {
+		return nil
+	}
+
+	return json.RawMessage([]byte(p.id))
 }
 
 // GetMethodName returns invoked request Method name as string data type.

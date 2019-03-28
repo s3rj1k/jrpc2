@@ -110,8 +110,7 @@ func (s *Service) Do(r *http.Request) *ResponseObject {
 
 	// prepare parameters object for named method
 	paramsObj := ParametersObject{
-		id:    id,
-		rawID: reqObj.ID,
+		id: id,
 
 		method: reqObj.Method,
 		params: reqObj.Params,
