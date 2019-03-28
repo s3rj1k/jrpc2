@@ -110,11 +110,14 @@ func (s *Service) Do(r *http.Request) *ResponseObject {
 
 	// prepare parameters object for named method
 	paramsObj := ParametersObject{
-		ra:     GetRealClientAddress(r),
-		ua:     r.UserAgent(),
-		id:     id,
+		id:    id,
+		rawID: reqObj.ID,
+
 		method: reqObj.Method,
 		params: reqObj.Params,
+
+		ra: GetRealClientAddress(r),
+		ua: r.UserAgent(),
 	}
 
 	// invoke named method with the provided parameters
