@@ -25,3 +25,14 @@ func GetRealClientAddress(r *http.Request) string {
 
 	return r.RemoteAddr
 }
+
+// GetRealHostAddress attempts to acquire original HOST from upstream reverse proxy.
+func GetRealHostAddress(r *http.Request) string {
+
+	// check X-Forwarded-Host header
+	if val := r.Header.Get("X-Forwarded-Host"); val != "" {
+		return val
+	}
+
+	return r.Host
+}

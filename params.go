@@ -43,7 +43,7 @@ func (p ParametersObject) GetRemoteAddress() string {
 	return GetRealClientAddress(p.r)
 }
 
-// GetUserAgent returns user agent of client who made request.
+// GetUserAgent returns User Agent of client who made request.
 func (p ParametersObject) GetUserAgent() string {
 	return p.r.UserAgent()
 }
@@ -51,4 +51,69 @@ func (p ParametersObject) GetUserAgent() string {
 // GetRawJSONParams returns json.RawMessage of JSON-RPC 2.0 invoked method params data.
 func (p ParametersObject) GetRawJSONParams() json.RawMessage {
 	return p.params
+}
+
+// GetCookies parses and returns the HTTP cookies sent with the request.
+func (p ParametersObject) GetCookies() []*http.Cookie {
+	return p.r.Cookies()
+}
+
+// GetReferer parses and returns the HTTP refere header sent with the request.
+func (p ParametersObject) GetReferer() string {
+	return p.r.Referer()
+}
+
+// GetMethod returns the HTTP request method.
+func (p ParametersObject) GetMethod() string {
+	return p.r.Method
+}
+
+// GetProto returns the HTTP protocol version.
+func (p ParametersObject) GetProto() string {
+	return p.r.Proto
+}
+
+// GetProtoMajor returns the HTTP protocol version, major part.
+func (p ParametersObject) GetProtoMajor() int {
+	return p.r.ProtoMajor
+}
+
+// GetProtoMinor returns the HTTP protocol version, minor part.
+func (p ParametersObject) GetProtoMinor() int {
+	return p.r.ProtoMajor
+}
+
+// GetRequestURI returns the HTTP protocol request URI.
+func (p ParametersObject) GetRequestURI() string {
+	return p.r.RequestURI
+}
+
+// GetContentLength returns the HTTP request content length.
+func (p ParametersObject) GetContentLength() int64 {
+	return p.r.ContentLength
+}
+
+// GetHost returns the HTTP server host.
+func (p ParametersObject) GetHost() string {
+	return GetRealHostAddress(p.r)
+}
+
+// GetTransferEncoding parses and returns TransferEncoding headers from the HTTP request.
+func (p ParametersObject) GetTransferEncoding() []string {
+	return p.r.TransferEncoding
+}
+
+// GetHeaders returns headers of the HTTP request.
+func (p ParametersObject) GetHeaders() http.Header {
+	return p.r.Header
+}
+
+// GetTrailer returns trailer headers of the HTTP request.
+func (p ParametersObject) GetTrailer() http.Header {
+	return p.r.Trailer
+}
+
+// GetBasicAuth returns returns the username and password provided in the request's Authorization header.
+func (p ParametersObject) GetBasicAuth() (username, password string, ok bool) {
+	return p.r.BasicAuth()
 }
