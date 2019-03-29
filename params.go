@@ -2,34 +2,35 @@ package jrpc2
 
 import (
 	"encoding/json"
+	"net/http"
 )
 
 // ParametersObject represents input data for JSON-RPC 2.0 method.
 type ParametersObject struct {
 	// fields below are intentionally unexported
-	id string // contains request ID as string data type
+	id *json.RawMessage // contains request ID
 
 	method string // contains the name of the method that was invoked
 
-	ra string // contains remote address of request source
-	ua string // contains user agent of client who made request
+	r *http.Request // contains pointer to HTTP request object
 
 	params json.RawMessage // contains raw JSON params of invoked method
 }
 
 // GetID returns request ID as string data type.
 func (p ParametersObject) GetID() string {
-	return p.id
+
+	id, err := ConvertIDtoString(p.id)
+	if err != nil {
+		return "null"
+	}
+
+	return id
 }
 
 // GetRawID returns request ID as json.RawMessage data type.
-func (p ParametersObject) GetRawID() json.RawMessage {
-
-	if p.id == "null" {
-		return nil
-	}
-
-	return json.RawMessage([]byte(p.id))
+func (p ParametersObject) GetRawID() *json.RawMessage {
+	return p.id
 }
 
 // GetMethodName returns invoked request Method name as string data type.
@@ -39,12 +40,12 @@ func (p ParametersObject) GetMethodName() string {
 
 // GetRemoteAddress returns remote address of request source.
 func (p ParametersObject) GetRemoteAddress() string {
-	return p.ra
+	return GetRealClientAddress(p.r)
 }
 
 // GetUserAgent returns user agent of client who made request.
 func (p ParametersObject) GetUserAgent() string {
-	return p.ua
+	return p.r.UserAgent()
 }
 
 // GetRawJSONParams returns json.RawMessage of JSON-RPC 2.0 invoked method params data.

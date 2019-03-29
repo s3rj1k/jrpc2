@@ -2,55 +2,75 @@ package jrpc2
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 )
 
 // Service represents a JSON-RPC 2.0 capable HTTP server.
 type Service struct {
 	// fields below are intentionally unexported
-	socket string // socket is the Unix Socket Path for the server
-	route  string // route is the Path to the JSON-RPC 2.0 API
+	us    string // unix socket path for the server
+	route string // path to the JSON-RPC 2.0 HTTP endpoint
 
-	methods map[string]method // methods contains the mapping of registered methods
-	headers map[string]string // headers contains custom response headers
+	methods map[string]method // mapping of registered methods
+	headers map[string]string // custom response headers
 
-	socketPermissions uint32 // SocketPermissions is Unix Socket permission for chmod
+	usMode uint32 // unix socket permissions, mode bits
 
-	proxy bool // proxy sets special working mode that forwards all methods to onle single method 'rpc.proxy', used for JSON-RPC 2.0 proxing
+	proxy bool // enables JSON-RPC (catch-all) proxy working mode
+
+	req  func(r *http.Request, data []byte) error // defines request function hook, runs just after request body is read
+	resp func(r *http.Request, data []byte) error // defines response function hook, runs just before response is written
 }
 
 // Create defines a new service instance.
 func Create(socket string) *Service {
 	return &Service{
-		socket:            socket,
-		socketPermissions: 0777,
-		route:             "/",
-		headers:           make(map[string]string),
-		methods:           make(map[string]method),
-		proxy:             false,
+		us:      socket,
+		usMode:  0777,
+		route:   "/",
+		headers: make(map[string]string),
+		methods: make(map[string]method),
+
+		proxy: false,
+
+		req: func(r *http.Request, data []byte) error {
+			return nil
+		},
+		resp: func(r *http.Request, data []byte) error {
+			return nil
+		},
 	}
 }
 
 // CreateProxy defines a new proxy service instance.
 func CreateProxy(socket string) *Service {
 	return &Service{
-		socket:            socket,
-		socketPermissions: 0777,
-		route:             "/",
-		headers:           make(map[string]string),
-		methods:           nil,
-		proxy:             true,
+		us:      socket,
+		usMode:  0777,
+		route:   "/",
+		headers: make(map[string]string),
+		methods: nil,
+
+		proxy: true,
+
+		req: func(r *http.Request, data []byte) error {
+			return nil
+		},
+		resp: func(r *http.Request, data []byte) error {
+			return nil
+		},
 	}
 }
 
 // SetSocket sets custom unix socket for service.
 func (s *Service) SetSocket(socket string) {
-	s.socket = socket
+	s.us = socket
 }
 
 // SetSocketPermissions sets custom unix socket permissions for service.
-func (s *Service) SetSocketPermissions(perm uint32) {
-	s.socketPermissions = perm
+func (s *Service) SetSocketPermissions(mode uint32) {
+	s.usMode = mode
 }
 
 // SetRoute sets custom route for service.
@@ -94,4 +114,14 @@ func (s *Service) RegisterProxy(f func(ParametersObject) (interface{}, *ErrorObj
 			},
 		}
 	}
+}
+
+// SetRequestHookFunction defines function that will be used as request hook.
+func (s *Service) SetRequestHookFunction(f func(r *http.Request, data []byte) error) {
+	s.req = f
+}
+
+// SetResponseHookFunction defines function that will be used as request hook.
+func (s *Service) SetResponseHookFunction(f func(r *http.Request, data []byte) error) {
+	s.resp = f
 }

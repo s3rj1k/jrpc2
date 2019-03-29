@@ -12,21 +12,21 @@ func (s *Service) Start() error {
 
 	var rerr error
 
-	if _, err := os.Stat(s.socket); !os.IsNotExist(err) {
-		err := syscall.Unlink(s.socket)
+	if _, err := os.Stat(s.us); !os.IsNotExist(err) {
+		err := syscall.Unlink(s.us)
 		if err != nil {
 			return err
 		}
 	}
 
-	us, err := net.Listen("unix", s.socket)
+	us, err := net.Listen("unix", s.us)
 	if err != nil {
 		return err
 	}
 
 	if err = os.Chmod(
-		s.socket,
-		os.FileMode(s.socketPermissions),
+		s.us,
+		os.FileMode(s.usMode),
 	); err != nil {
 		return err
 	}
