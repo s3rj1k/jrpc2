@@ -80,7 +80,7 @@ func (p ParametersObject) GetProtoMajor() int {
 
 // GetProtoMinor returns the HTTP protocol version, minor part.
 func (p ParametersObject) GetProtoMinor() int {
-	return p.r.ProtoMajor
+	return p.r.ProtoMinor
 }
 
 // GetRequestURI returns the HTTP protocol request URI.
