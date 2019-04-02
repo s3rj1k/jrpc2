@@ -11,7 +11,9 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -19,6 +21,8 @@ import (
 
 	"github.com/s3rj1k/jrpc2/client"
 )
+
+// go test -coverprofile=cover.out && go tool cover -html=cover.out -o cover.html
 
 const serverSocket = "/tmp/jrpc2_server.socket"
 const proxySocket = "/tmp/jrpc2_proxy.socket"
@@ -1370,20 +1374,14 @@ func TestRespHookFailed(t *testing.T) {
 		serverSocket,
 		postHeaders,
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	_noerr(t, err)
 
 	defer func() {
 		err = response.Body.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
+		_noerr(t, err)
 	}()
 
-	if response.StatusCode != http.StatusInternalServerError {
-		t.Fatalf("expecting '%d' to be '%d'", response.StatusCode, http.StatusInternalServerError)
-	}
+	_verifyequal(t, response.StatusCode, http.StatusInternalServerError)
 }
 
 func TestReqHookFailed(t *testing.T) {
@@ -1403,31 +1401,228 @@ func TestReqHookFailed(t *testing.T) {
 		serverSocket,
 		postHeaders,
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	_noerr(t, err)
 
 	defer func() {
 		err = resp.Body.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
+		_noerr(t, err)
 	}()
 
-	if resp.StatusCode != http.StatusInternalServerError {
-		t.Fatalf("expecting '%d' to be '%d'", resp.StatusCode, http.StatusInternalServerError)
+	_verifyequal(t, resp.StatusCode, http.StatusInternalServerError)
+}
+
+func TestParametersObjectMethods(t *testing.T) {
+	td := map[string]string{
+		"httpMethod":     "GET",
+		"rpcMethod":      "testmethod",
+		"URI":            "http://www.google.com",
+		"body":           "Hello, Test body!",
+		"ID":             "null",
+		"JSON":           "{}",
+		"testCookieName": "testCookieValue",
+		"Referer":        "testReferer",
+		"testHeader":     "TestValue",
+		"Foo":            "bar",
+	}
+
+	testreq := httptest.NewRequest(td["httpMethod"], td["URI"], strings.NewReader(td["body"]))
+	b := []byte(td["JSON"])
+
+	testreq.AddCookie(&http.Cookie{Name: "testCookieName", Value: td["testCookieName"]})
+	testreq.Header.Set("Referer", td["Referer"])
+	testreq.Header.Set("testHeader", td["testHeader"])
+	testreq.SetBasicAuth("Foo", td["Foo"])
+
+	params := ParametersObject{
+		id:     (*json.RawMessage)(&b),
+		method: td["rpcMethod"],
+		r:      testreq,
+		params: b,
+	}
+
+	if params.GetID() != td["ID"] {
+		t.Fatalf("expecting ID '%s' got '%s'", td["ID"], params.GetID())
+	}
+
+	if params.GetRawID() != (*json.RawMessage)(&b) {
+		t.Fatalf("expecting RawID '%v' got '%v'", &b, params.GetRawID())
+	}
+
+	if len(params.GetCookies()) != 1 || params.GetCookies()[0].String() != "testCookieName=testCookieValue" {
+		t.Fatalf("expecting Cookies '%s' got '%s'", "testCookieName=testCookieValue", params.GetCookies())
+	}
+
+	if params.GetReferer() != td["Referer"] {
+		t.Fatalf("expecting Referer '%s' got '%s'", td["Referer"], params.GetReferer())
+	}
+
+	if params.GetMethod() != td["httpMethod"] {
+		t.Fatalf("expecting Method '%s' got '%s'", td["httpMethod"], params.GetMethod())
+	}
+
+	if params.GetProto() != "HTTP/1.1" || params.GetProtoMajor() != 1 || params.GetProtoMinor() != 1 {
+		t.Fatalf("expecting Proto %s got %s", "HTTP/1.1", params.GetProto())
+	}
+
+	if params.GetRequestURI() != td["URI"] {
+		t.Fatalf("expecting URI '%s' got '%s'", td["URI"], params.GetRequestURI())
+	}
+
+	if params.GetContentLength() != int64(len(td["body"])) {
+		t.Fatalf("expecting Content Lenght %d got %d", len(td["body"]), params.GetContentLength())
+	}
+
+	if params.GetHost() != strings.TrimPrefix(td["URI"], "http://") {
+		t.Fatalf("expecting Host '%s' got '%s'", strings.TrimPrefix(td["URI"], "http://"), params.GetHost())
+	}
+
+	if params.GetHeaders().Get("testHeader") != td["testHeader"] {
+		t.Fatalf("expecting testHeader %s got '%s'", td["testHeader"], params.GetHeaders().Get("testHeader"))
+	}
+
+	u, p, ok := params.GetBasicAuth()
+	if !ok || u != "Foo" || p != td["Foo"] {
+		t.Fatalf("expecting User:Password %s:%s got %s:%s", "Foo", td["Foo"], u, p)
+	}
+
+	if len(params.GetTransferEncoding()) > 0 {
+		t.Fatalf("expecting empty transfer encoding, got %v", params.GetTransferEncoding())
+	}
+
+	if len(params.GetTrailer()) > 0 {
+		t.Fatalf("expecting empty trailer headers got %v", params.GetTrailer())
 	}
 }
 
+func TestGetPositionalFloat64Params(t *testing.T) {
+
+	float64slice := []float64{14.4, 15.5, 17.7}
+
+	po := ParametersObject{params: []byte(`[14.4, 15.5, 17.7]`)}
+
+	fl, err := GetPositionalFloat64Params(po)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_verifyequal(t, fl, float64slice)
+
+	po.params = []byte(`["foo","bar","go"]`)
+	_, err = GetPositionalFloat64Params(po)
+	_verifyerrobj(t, err, InvalidParamsCode, InvalidParamsMessage)
+
+}
+
+func TestGetPositionalIntParams(t *testing.T) {
+
+	int64slice := []int64{-14, 15, -17}
+	intslice := []int{-14, 15, -17}
+
+	po := ParametersObject{params: []byte(`[-14, 15, -17]`)}
+
+	in64, err := GetPositionalInt64Params(po)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_verifyequal(t, in64, int64slice)
+	in, err := GetPositionalIntParams(po)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_verifyequal(t, in, intslice)
+
+	po.params = []byte(`[14.4, 15.5, 17.7]`)
+
+	_, err = GetPositionalInt64Params(po)
+	_verifyerrobj(t, err, InvalidParamsCode, InvalidParamsMessage)
+
+	_, err = GetPositionalIntParams(po)
+	_verifyerrobj(t, err, InvalidParamsCode, InvalidParamsMessage)
+
+}
+
+func TestGetPositionalUintParams(t *testing.T) {
+
+	uint64slice := []uint64{14, 15, 17}
+	uintslice := []uint{14, 15, 17}
+
+	po := ParametersObject{params: []byte(`[14, 15, 17]`)}
+
+	uin64, err := GetPositionalUint64Params(po)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_verifyequal(t, uin64, uint64slice)
+
+	uin, err := GetPositionalUintParams(po)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_verifyequal(t, uin, uintslice)
+
+	po.params = []byte(`[-14, 15, -17]`)
+
+	_, err = GetPositionalUint64Params(po)
+	_verifyerrobj(t, err, InvalidParamsCode, InvalidParamsMessage)
+
+	_, err = GetPositionalUintParams(po)
+	_verifyerrobj(t, err, InvalidParamsCode, InvalidParamsMessage)
+
+}
+
+func TestGetPositionalStringParams(t *testing.T) {
+
+	stringslice := []string{"foo", "bar", "go"}
+
+	po := ParametersObject{params: []byte(`["foo","bar","go"]`)}
+
+	st, err := GetPositionalStringParams(po)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_verifyequal(t, st, stringslice)
+
+	po.params = []byte(`[-14, 15, -17]`)
+
+	_, err = GetPositionalStringParams(po)
+	_verifyerrobj(t, err, InvalidParamsCode, InvalidParamsMessage)
+}
+
+// verifies that err contains code and message
 func _verifyerr(t *testing.T, err error, code int, message string) {
 
-	c := "Code=" + strconv.Itoa(code)
-
-	if !strings.Contains(err.Error(), c) {
+	if !strings.Contains(err.Error(), strconv.Itoa(code)) {
 		t.Fatalf("expecting error '%s' to have code '%d'", err, code)
 	}
 
 	if !strings.Contains(err.Error(), message) {
 		t.Fatalf("expecting error '%s' to have code '%d'", err, code)
+	}
+}
+
+// verifies that err.code==code and err.message==message
+func _verifyerrobj(t *testing.T, err *ErrorObject, code int, message string) {
+
+	if err.Code != code {
+		t.Fatalf("expecting code '%d' got '%d'", code, err.Code)
+	}
+
+	if err.Message != message {
+		t.Fatalf("expecting message '%s' got '%s'", message, err.Message)
+	}
+}
+
+// verifies that a==b
+func _verifyequal(t *testing.T, a, b interface{}) {
+
+	if !reflect.DeepEqual(a, b) {
+		t.Fatalf("expecting '%v' to be equal to '%v'", a, b)
+	}
+}
+
+// verifies that err==nil
+func _noerr(t *testing.T, err error) {
+
+	if err != nil {
+		t.Fatalf("unexpected error '%s'", err)
 	}
 }
