@@ -35,9 +35,6 @@ func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
 		return
 	}
 
-	// write response code to HTTP writer interface
-	w.WriteHeader(respObj.statusCode)
-
 	// get response bytes
 	resp := respObj.Marshal()
 
@@ -51,6 +48,9 @@ func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
 		// end response processing
 		return
 	}
+
+	// write response code to HTTP writer interface
+	w.WriteHeader(respObj.statusCode)
 
 	// write data to HTTP writer interface
 	_, err = w.Write(resp)

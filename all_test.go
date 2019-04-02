@@ -28,8 +28,9 @@ const proxyRoute = "/proxy"
 
 // nolint:gochecknoglobals
 var (
-	serverURL = fmt.Sprintf("http://localhost%s", serverRoute)
-	proxyURL  = fmt.Sprintf("http://localhost%s", proxyRoute)
+	serverService, proxyService *Service
+	serverURL                   = fmt.Sprintf("http://localhost%s", serverRoute)
+	proxyURL                    = fmt.Sprintf("http://localhost%s", proxyRoute)
 
 	postHeaders = map[string]string{
 		"Accept":       "application/json", // set Accept header
@@ -137,8 +138,7 @@ func Update(data ParametersObject) (interface{}, *ErrorObject) {
 	return nil, nil
 }
 
-// nolint: gochecknoinits
-func init() {
+func setup() {
 
 	// Seed random
 	rand.Seed(time.Now().UnixNano())
@@ -174,9 +174,9 @@ func init() {
 	}
 
 	go func() {
-		s := Create(serverSocket)
-		s.SetRoute(serverRoute)
-		s.SetHeaders(
+		serverService = Create(serverSocket)
+		serverService.SetRoute(serverRoute)
+		serverService.SetHeaders(
 			map[string]string{
 				"Server":                        "JSON-RPC/2.0 (Golang)",
 				"Access-Control-Allow-Origin":   "*",
@@ -186,20 +186,21 @@ func init() {
 			},
 		)
 
-		s.Register("update", Update)
-		s.Register("copy", CopyParamsData)
-		s.Register("subtract", Subtract)
+		serverService.Register("update", Update)
+		serverService.Register("copy", CopyParamsData)
+		serverService.Register("subtract", Subtract)
+		serverService.Register("nilmethod", nil)
 
-		err := s.Start()
+		err := serverService.Start()
 		if err != nil {
 			log.Fatal(err)
 		}
 	}()
 
 	go func() {
-		s := CreateProxy(proxySocket)
-		s.SetRoute(proxyRoute)
-		s.SetHeaders(
+		proxyService = CreateProxy(proxySocket)
+		proxyService.SetRoute(proxyRoute)
+		proxyService.SetHeaders(
 			map[string]string{
 				"Server":                        "JSON-RPC/2.0 Proxy (Golang)",
 				"Access-Control-Allow-Origin":   "*",
@@ -209,9 +210,9 @@ func init() {
 			},
 		)
 
-		s.RegisterProxy(CopyParamsData)
+		proxyService.RegisterProxy(CopyParamsData)
 
-		err := s.Start()
+		err := proxyService.Start()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -260,6 +261,17 @@ func httpPost(url, request, socket string, headers map[string]string) (*http.Res
 
 	// send request
 	return httpc.Do(req)
+}
+
+func TestMain(m *testing.M) {
+	// will be run before all tests
+	setup()
+
+	// actual tests running
+	ec := m.Run()
+
+	// exit with status code received from tests
+	os.Exit(ec)
 }
 
 func TestClientLibrary(t *testing.T) {
@@ -1321,5 +1333,101 @@ func TestInvalidBatch(t *testing.T) {
 	err = json.NewDecoder(bufio.NewReader(resp.Body)).Decode(&results)
 	if err == nil {
 		t.Fatal("expected decoder error for batch request")
+	}
+}
+
+func TestServiceCall(t *testing.T) {
+
+	c := client.GetSocketConfig(serverSocket, serverRoute)
+
+	// testing empty name
+	_, err := c.Call(" ", []byte("{}"))
+	_verifyerr(t, err, InvalidRequestCode, InvalidRequestMessage)
+
+	// testing rpc-internal method
+	_, err = c.Call("rpc.whatever", []byte("{}"))
+	_verifyerr(t, err, InvalidRequestCode, InvalidRequestMessage)
+
+	// testing nil method
+	_, err = c.Call("nilmethod", []byte("{}"))
+	_verifyerr(t, err, InternalErrorCode, InternalErrorMessage)
+}
+
+func TestRespHookFailed(t *testing.T) {
+	// setup code
+	oldresp := serverService.resp
+	serverService.resp = func(r *http.Request, data []byte) error {
+		return fmt.Errorf("hook failed error")
+	}
+	// teardown code
+	defer func() {
+		serverService.resp = oldresp
+	}()
+
+	response, err := httpPost(
+		serverURL,
+		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
+		serverSocket,
+		postHeaders,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		err = response.Body.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	if response.StatusCode != http.StatusInternalServerError {
+		t.Fatalf("expecting '%d' to be '%d'", response.StatusCode, http.StatusInternalServerError)
+	}
+}
+
+func TestReqHookFailed(t *testing.T) {
+	// setup code
+	oldreq := serverService.req
+	serverService.req = func(r *http.Request, data []byte) error {
+		return fmt.Errorf("hook failed error")
+	}
+	// teardown code
+	defer func() {
+		serverService.req = oldreq
+	}()
+
+	resp, err := httpPost(
+		serverURL,
+		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
+		serverSocket,
+		postHeaders,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		err = resp.Body.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Fatalf("expecting '%d' to be '%d'", resp.StatusCode, http.StatusInternalServerError)
+	}
+}
+
+func _verifyerr(t *testing.T, err error, code int, message string) {
+
+	c := "Code=" + strconv.Itoa(code)
+
+	if !strings.Contains(err.Error(), c) {
+		t.Fatalf("expecting error '%s' to have code '%d'", err, code)
+	}
+
+	if !strings.Contains(err.Error(), message) {
+		t.Fatalf("expecting error '%s' to have code '%d'", err, code)
 	}
 }
