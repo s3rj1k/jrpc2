@@ -19,7 +19,7 @@ func GetRealClientAddress(r *http.Request) string {
 	}
 
 	// check r.RemoteAddr variable
-	if host, _, err := net.SplitHostPort(r.RemoteAddr); err != nil {
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
 		return host
 	}
 
