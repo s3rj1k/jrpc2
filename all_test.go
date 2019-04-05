@@ -1360,12 +1360,15 @@ func TestServiceCall(t *testing.T) {
 func TestRespHookFailed(t *testing.T) {
 	// setup code
 	oldresp := serverService.resp
-	serverService.resp = func(r *http.Request, data []byte) error {
-		return fmt.Errorf("hook failed error")
-	}
+	serverService.SetResponseHookFunction(
+		func(r *http.Request, data []byte) error {
+			return fmt.Errorf("hook failed error")
+		},
+	)
+
 	// teardown code
 	defer func() {
-		serverService.resp = oldresp
+		serverService.SetResponseHookFunction(oldresp)
 	}()
 
 	response, err := httpPost(
@@ -1387,12 +1390,14 @@ func TestRespHookFailed(t *testing.T) {
 func TestReqHookFailed(t *testing.T) {
 	// setup code
 	oldreq := serverService.req
-	serverService.req = func(r *http.Request, data []byte) error {
-		return fmt.Errorf("hook failed error")
-	}
+	serverService.SetRequestHookFunction(
+		func(r *http.Request, data []byte) error {
+			return fmt.Errorf("hook failed error")
+		},
+	)
 	// teardown code
 	defer func() {
-		serverService.req = oldreq
+		serverService.SetRequestHookFunction(oldreq)
 	}()
 
 	resp, err := httpPost(
@@ -1585,6 +1590,109 @@ func TestGetPositionalStringParams(t *testing.T) {
 
 	_, err = GetPositionalStringParams(po)
 	_verifyerrobj(t, err, InvalidParamsCode, InvalidParamsMessage)
+}
+
+func TestServiceMethods(t *testing.T) {
+
+	testService := Create("")
+
+	testService.SetSocket("testSocket")
+	_verifyequal(t, testService.us, "testSocket")
+
+	testService.SetSocketPermissions(0644)
+	_verifyequal(t, testService.usMode, uint32(0644))
+
+	testService.SetRoute("/another")
+	_verifyequal(t, testService.route, "/another")
+
+	// slash always appended
+	testService.SetRoute("testRoute")
+	_verifyequal(t, testService.route, "/testRoute")
+
+	// empty transforms to root
+	testService.SetRoute("")
+	_verifyequal(t, testService.route, "/")
+
+	testProxy := CreateProxy("")
+
+	// proxy must not register methods using simple register
+	testProxy.Register("randomName", Update)
+	var m map[string]method // deepEqual needs map
+	_verifyequal(t, testProxy.methods, m)
+}
+
+func TestValidateHTTPProtocolVersion(t *testing.T) {
+
+	req := httptest.NewRequest("", "http://www.google.com", nil)
+	req.Proto = "HTTP/2.0"
+
+	respObj := new(ResponseObject)
+
+	_verifyequal(t, false, respObj.ValidateHTTPProtocolVersion(req))
+	_verifyerrobj(t, respObj.Error, InvalidRequestCode, InvalidRequestMessage)
+	_verifyequal(t, respObj.statusCode, http.StatusNotImplemented)
+
+	req.Proto = "HTTP/1.1"
+
+	_verifyequal(t, true, respObj.ValidateHTTPProtocolVersion(req))
+}
+
+func TestGetRealClientAddress(t *testing.T) {
+
+	req := httptest.NewRequest("", "http://www.google.com", nil)
+	req.Header.Set("X-Real-IP", "0.0.0.0")
+
+	_verifyequal(t, "0.0.0.0", GetRealClientAddress(req))
+
+	req.Header.Del("X-Real-IP")
+	req.Header.Set("X-Client-IP", "1.1.1.1")
+
+	_verifyequal(t, "1.1.1.1", GetRealClientAddress(req))
+
+	req.Header.Del("X-Client-IP")
+	req.RemoteAddr = "2.2.2.2:80"
+
+	_verifyequal(t, "2.2.2.2", GetRealClientAddress(req))
+
+	req.RemoteAddr = ""
+
+	_verifyequal(t, "", GetRealClientAddress(req))
+}
+
+func TestGetRealHostAddress(t *testing.T) {
+
+	req := httptest.NewRequest("", "http://www.google.com", nil)
+
+	_verifyequal(t, "www.google.com", GetRealHostAddress(req))
+
+	req.Header.Set("X-Forwarded-Host", "0.0.0.0")
+
+	_verifyequal(t, "0.0.0.0", GetRealHostAddress(req))
+}
+
+func TestResponseObjectMarshal(t *testing.T) {
+
+	r := DefaultResponseObject()
+	b := r.Marshal()
+	decoded := new(ResponseObject)
+
+	err := json.Unmarshal(b, decoded)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_verifyequal(t, decoded.Jsonrpc, r.Jsonrpc)
+
+	r.Result = make(chan struct{})
+	b = r.Marshal()
+	decoded = new(ResponseObject)
+
+	err = json.Unmarshal(b, decoded)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_verifyerrobj(t, decoded.Error, InternalErrorCode, InternalErrorMessage)
 }
 
 // verifies that err contains code and message
