@@ -10,7 +10,7 @@ import (
 func (responseObject *ResponseObject) ValidateHTTPProtocolVersion(r *http.Request) bool {
 
 	// check request protocol version
-	if r.Proto != "HTTP/1.1" {
+	if r.Proto != "HTTP/1.1" { // nolint: goconst
 		responseObject.Error = &ErrorObject{
 			Code:    InvalidRequestCode,
 			Message: InvalidRequestMessage,
