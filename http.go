@@ -42,8 +42,9 @@ func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
 	err := s.resp(respObj.r, resp)
 	if err != nil { // hook failed
 
-		// set response header to 500, (internal server error)
-		w.WriteHeader(http.StatusInternalServerError)
+		// set response header to custom HTTP code from hook error
+		// or fallback to 500, (internal server error)
+		w.WriteHeader(getHTTPCodeFromHookError(err))
 
 		// end response processing
 		return
@@ -101,8 +102,9 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err = s.req(r, req)
 	if err != nil { // hook failed
 
-		// set response header to 500, (internal server error)
-		w.WriteHeader(http.StatusInternalServerError)
+		// set response header to custom HTTP code from hook error
+		// or fallback to 500, (internal server error)
+		w.WriteHeader(getHTTPCodeFromHookError(err))
 
 		// end response processing
 		return

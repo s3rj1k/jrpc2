@@ -138,7 +138,7 @@ func Subtract(data ParametersObject) (interface{}, *ErrorObject) {
 	return *paramObj.X - *paramObj.Y, nil
 }
 
-func Update(data ParametersObject) (interface{}, *ErrorObject) {
+func Update(_ ParametersObject) (interface{}, *ErrorObject) {
 	return nil, nil
 }
 
@@ -1387,6 +1387,39 @@ func TestRespHookFailed(t *testing.T) {
 	_verifyequal(t, response.StatusCode, http.StatusInternalServerError)
 }
 
+func TestRespHookFailedCustomError(t *testing.T) {
+	// setup code
+	oldresp := serverService.resp
+	serverService.SetResponseHookFunction(
+		func(r *http.Request, data []byte) error {
+			return &HookError{
+				err:      "hook failed error",
+				httpCode: http.StatusUnavailableForLegalReasons,
+			}
+		},
+	)
+
+	// teardown code
+	defer func() {
+		serverService.SetResponseHookFunction(oldresp)
+	}()
+
+	response, err := httpPost(
+		serverURL,
+		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
+		serverSocket,
+		postHeaders,
+	)
+	_noerr(t, err)
+
+	defer func() {
+		err = response.Body.Close()
+		_noerr(t, err)
+	}()
+
+	_verifyequal(t, response.StatusCode, http.StatusUnavailableForLegalReasons)
+}
+
 func TestReqHookFailed(t *testing.T) {
 	// setup code
 	oldreq := serverService.req
@@ -1414,6 +1447,38 @@ func TestReqHookFailed(t *testing.T) {
 	}()
 
 	_verifyequal(t, resp.StatusCode, http.StatusInternalServerError)
+}
+
+func TestReqHookFailedCustomError(t *testing.T) {
+	// setup code
+	oldreq := serverService.req
+	serverService.SetRequestHookFunction(
+		func(r *http.Request, data []byte) error {
+			return &HookError{
+				err:      "hook failed error",
+				httpCode: http.StatusUnavailableForLegalReasons,
+			}
+		},
+	)
+	// teardown code
+	defer func() {
+		serverService.SetRequestHookFunction(oldreq)
+	}()
+
+	resp, err := httpPost(
+		serverURL,
+		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
+		serverSocket,
+		postHeaders,
+	)
+	_noerr(t, err)
+
+	defer func() {
+		err = resp.Body.Close()
+		_noerr(t, err)
+	}()
+
+	_verifyequal(t, resp.StatusCode, http.StatusUnavailableForLegalReasons)
 }
 
 func TestParametersObjectMethods(t *testing.T) {
@@ -1721,7 +1786,6 @@ func _verifyerrobj(t *testing.T, err *ErrorObject, code int, message string) {
 
 // verifies that a==b
 func _verifyequal(t *testing.T, a, b interface{}) {
-
 	if !reflect.DeepEqual(a, b) {
 		t.Fatalf("expecting '%v' to be equal to '%v'", a, b)
 	}
@@ -1729,7 +1793,6 @@ func _verifyequal(t *testing.T, a, b interface{}) {
 
 // verifies that err==nil
 func _noerr(t *testing.T, err error) {
-
 	if err != nil {
 		t.Fatalf("unexpected error '%s'", err)
 	}
