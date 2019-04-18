@@ -16,20 +16,23 @@ import (
 func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
 
 	// set custom response headers
-	for header, value := range s.headers {
-		w.Header().Set(header, value)
-	}
+	var headers = s.headers
 
 	// set dynamic response headers
 	for header, value := range respObj.headers {
+		headers[header] = value
+	}
+
+	// set response headers
+	for header, value := range headers {
 		w.Header().Set(header, value)
 	}
 
 	// notification does not send responses to client
 	if respObj.notification {
 
-		// set response header to 204, (no content)
-		w.WriteHeader(http.StatusNoContent)
+		// write response code to HTTP writer interface
+		w.WriteHeader(respObj.statusCode)
 
 		// end response processing
 		return
@@ -67,6 +70,9 @@ func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
 
 // ServeHTTP implements needed interface for HTTP library, handles incoming RPC client requests, generates responses.
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	// update HTTP request with new context
+	r = s.setReqestContextEarly(r)
 
 	// check Basic Authorization
 	if err := s.CheckAuthorization(r); err != nil {
@@ -246,7 +252,13 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		respObj.ID = reqObj.ID
 	} else {
 		respObj.notification = true
+
+		// set status code for notification
+		respObj.statusCode = http.StatusNoContent
 	}
+
+	// update HTTP request with new context
+	r = s.setReqestContextLate(r, respObj)
 
 	// prepare parameters object for named method
 	paramsObj := ParametersObject{

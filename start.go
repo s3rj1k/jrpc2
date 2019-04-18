@@ -17,6 +17,10 @@ func (s *Service) Start() error {
 		return fmt.Errorf("unix socket must be defined")
 	}
 
+	if s.address != nil {
+		return fmt.Errorf("network address must not be defined")
+	}
+
 	if _, err := os.Stat(*s.socket); !os.IsNotExist(err) {
 		err := syscall.Unlink(*s.socket)
 		if err != nil {
@@ -58,7 +62,11 @@ func (s *Service) Start() error {
 func (s *Service) StartTCPTLS() error {
 
 	if s.address == nil {
-		return fmt.Errorf("address must be defined")
+		return fmt.Errorf("network address must be defined")
+	}
+
+	if s.socket != nil {
+		return fmt.Errorf("unix socket must not be defined")
 	}
 
 	if _, err := os.Stat(s.cert); os.IsNotExist(err) {

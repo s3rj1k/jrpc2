@@ -1854,23 +1854,19 @@ func TestValidateHTTPProtocolVersion(t *testing.T) {
 func TestGetRealClientAddress(t *testing.T) {
 
 	req := httptest.NewRequest("", "http://www.google.com", nil)
-	req.Header.Set("X-Real-IP", "0.0.0.0")
+	req.Header.Set("X-Real-IP", "8.8.8.8")
 
-	_verifyequal(t, "0.0.0.0", GetRealClientAddress(req))
+	_verifyequal(t, "8.8.8.8", GetClientAddressFromHeader(req).String())
 
 	req.Header.Del("X-Real-IP")
 	req.Header.Set("X-Client-IP", "1.1.1.1")
 
-	_verifyequal(t, "1.1.1.1", GetRealClientAddress(req))
+	_verifyequal(t, "1.1.1.1", GetClientAddressFromHeader(req).String())
 
 	req.Header.Del("X-Client-IP")
 	req.RemoteAddr = "2.2.2.2:80"
 
-	_verifyequal(t, "2.2.2.2", GetRealClientAddress(req))
-
-	req.RemoteAddr = ""
-
-	_verifyequal(t, "", GetRealClientAddress(req))
+	_verifyequal(t, "2.2.2.2", GetClientAddressFromRequest(req).String())
 }
 
 func TestGetRealHostAddress(t *testing.T) {
@@ -1879,9 +1875,9 @@ func TestGetRealHostAddress(t *testing.T) {
 
 	_verifyequal(t, "www.google.com", GetRealHostAddress(req))
 
-	req.Header.Set("X-Forwarded-Host", "0.0.0.0")
+	req.Header.Set("X-Forwarded-Host", "i.ua")
 
-	_verifyequal(t, "0.0.0.0", GetRealHostAddress(req))
+	_verifyequal(t, "i.ua", GetRealHostAddress(req))
 }
 
 func TestResponseObjectMarshal(t *testing.T) {
