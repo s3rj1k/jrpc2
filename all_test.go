@@ -152,7 +152,8 @@ func Update(_ ParametersObject) (interface{}, *ErrorObject) {
 	return nil, nil
 }
 
-func setup() {
+//revive:disable:deep-exit
+func TestMain(m *testing.M) {
 
 	// Seed random
 	rand.Seed(time.Now().UnixNano())
@@ -276,7 +277,15 @@ func setup() {
 			break
 		}
 	}
+
+	// actual tests running
+	ec := m.Run()
+
+	// exit with status code received from tests
+	os.Exit(ec)
 }
+
+//revive:enable:deep-exit
 
 // httpPost is a wrapper for HTTP POST
 func httpPost(url, request, socket string, headers map[string]string) (*http.Response, error) {
@@ -306,17 +315,6 @@ func httpPost(url, request, socket string, headers map[string]string) (*http.Res
 
 	// send request
 	return httpc.Do(req)
-}
-
-func TestMain(m *testing.M) {
-	// will be run before all tests
-	setup()
-
-	// actual tests running
-	ec := m.Run()
-
-	// exit with status code received from tests
-	os.Exit(ec)
 }
 
 func TestClientLibrary(t *testing.T) {
@@ -1813,10 +1811,10 @@ func TestServiceMethods(t *testing.T) {
 	testService := Create("")
 
 	testService.SetSocket("testSocket")
-	_verifyequal(t, testService.us, "testSocket")
+	_verifyequal(t, *testService.socket, "testSocket")
 
 	testService.SetSocketPermissions(0644)
-	_verifyequal(t, testService.usMode, uint32(0644))
+	_verifyequal(t, testService.socketMode, uint32(0644))
 
 	testService.SetRoute("/another")
 	_verifyequal(t, testService.route, "/another")

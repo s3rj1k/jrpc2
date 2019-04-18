@@ -11,14 +11,20 @@ import (
 // Service represents a JSON-RPC 2.0 capable HTTP server.
 type Service struct {
 	// fields below are intentionally unexported
-	us    string // unix socket path for the server
+
+	address *string // address (IP:PORT) for TCP socket to bind listener to
+	socket  *string // unix socket path for the server
+
+	cert string // path to cert.pem (for TCP with TLS)
+	key  string // path to key.pem (for TCP with TLS)
+
 	route string // path to the JSON-RPC 2.0 HTTP endpoint
 
 	methods map[string]method       // mapping of registered methods
 	headers map[string]string       // custom response headers
 	auth    map[string][]*net.IPNet // contains mapping of allowed remote network to HTTP Authorization header
 
-	usMode uint32 // unix socket permissions, mode bits
+	socketMode uint32 // unix socket permissions, mode bits
 
 	proxy bool // enables JSON-RPC (catch-all) proxy working mode
 
@@ -26,12 +32,13 @@ type Service struct {
 	resp func(r *http.Request, data []byte) error // defines response function hook, runs just before response is written
 }
 
-// Create defines a new service instance.
+// Create defines a new service instance over Unix Socket.
 func Create(socket string) *Service {
 	return &Service{
-		us:     socket,
-		usMode: 0777,
-		route:  "/",
+		socket:     &socket,
+		socketMode: 0777,
+
+		route: "/",
 
 		headers: make(map[string]string),
 		methods: make(map[string]method),
@@ -48,12 +55,40 @@ func Create(socket string) *Service {
 	}
 }
 
-// CreateProxy defines a new proxy service instance.
+// openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -subj "/C=UA/ST=Kyiv/L=Kyiv/O=Office/OU=Org/CN=localhost"
+
+// CreateOverTCPWithTLS defines a new service instance over TCP with TLS (HTTPS).
+func CreateOverTCPWithTLS(address, route, key, cert string) *Service {
+	return &Service{
+		address: &address,
+
+		key:  key,
+		cert: cert,
+
+		route: route,
+
+		headers: make(map[string]string),
+		methods: make(map[string]method),
+		auth:    nil,
+
+		proxy: false,
+
+		req: func(r *http.Request, data []byte) error {
+			return nil
+		},
+		resp: func(r *http.Request, data []byte) error {
+			return nil
+		},
+	}
+}
+
+// CreateProxy defines a new proxy service over Unix Socket.
 func CreateProxy(socket string) *Service {
 	return &Service{
-		us:     socket,
-		usMode: 0777,
-		route:  "/",
+		socket:     &socket,
+		socketMode: 0777,
+
+		route: "/",
 
 		headers: make(map[string]string),
 		methods: nil,
@@ -70,17 +105,62 @@ func CreateProxy(socket string) *Service {
 	}
 }
 
-// SetSocket sets custom unix socket for service.
+// CreateProxyOverTCPWithTLS defines a new proxy service over TCP with TLS (HTTPS).
+func CreateProxyOverTCPWithTLS(address, route, key, cert string) *Service {
+	return &Service{
+		address: &address,
+
+		key:  key,
+		cert: cert,
+
+		route: route,
+
+		headers: make(map[string]string),
+		methods: nil,
+		auth:    nil,
+
+		proxy: true,
+
+		req: func(r *http.Request, data []byte) error {
+			return nil
+		},
+		resp: func(r *http.Request, data []byte) error {
+			return nil
+		},
+	}
+}
+
+// SetSocket sets custom unix socket for service object.
 func (s *Service) SetSocket(socket string) {
-	s.us = socket
+	s.socket = &socket
 }
 
-// SetSocketPermissions sets custom unix socket permissions for service.
+// GetSocket gets custom unix socket from service object.
+func (s *Service) GetSocket() string {
+	return *s.socket
+}
+
+// SetAddress sets custom network address for service object.
+func (s *Service) SetAddress(address string) {
+	s.address = &address
+}
+
+// GetAddress gets custom network address from service object.
+func (s *Service) GetAddress() string {
+	return *s.address
+}
+
+// SetSocketPermissions sets custom unix socket permissions for service object.
 func (s *Service) SetSocketPermissions(mode uint32) {
-	s.usMode = mode
+	s.socketMode = mode
 }
 
-// SetRoute sets custom route for service.
+// GetSocketPermissions gets custom unix socket permissions for service object.
+func (s *Service) GetSocketPermissions() uint32 {
+	return s.socketMode
+}
+
+// SetRoute sets custom route for service object.
 func (s *Service) SetRoute(route string) {
 
 	route = strings.TrimSpace(route)
@@ -96,9 +176,39 @@ func (s *Service) SetRoute(route string) {
 	s.route = route
 }
 
-// SetHeaders sets custom headers for service.
+// GetRoute gets custom route from service object.
+func (s *Service) GetRoute() string {
+	return s.route
+}
+
+// SetCertificateFilePath sets path to Certificate file in service object.
+func (s *Service) SetCertificateFilePath(path string) {
+	s.cert = path
+}
+
+// GetCertificateFilePath gets path of Certificate file in service object.
+func (s *Service) GetCertificateFilePath() string {
+	return s.cert
+}
+
+// SetCertificateKeyFilePath sets path to Certificate Key file in service object.
+func (s *Service) SetCertificateKeyFilePath(path string) {
+	s.key = path
+}
+
+// GetCertificateKeyFilePath gets path of Certificate Key file in service object.
+func (s *Service) GetCertificateKeyFilePath() string {
+	return s.key
+}
+
+// SetHeaders sets custom headers for service object.
 func (s *Service) SetHeaders(headers map[string]string) {
 	s.headers = headers
+}
+
+// GetHeaders gets custom headers from service object.
+func (s *Service) GetHeaders() map[string]string {
+	return s.headers
 }
 
 // Register maps the provided method name to the given function for later method calls.

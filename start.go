@@ -1,32 +1,37 @@
 package jrpc2
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"syscall"
 )
 
-// Start binds the RPCHandler to the server route and starts the http server.
+// Start binds the RPCHandler to the server route and starts the HTTP server over Unix Socket.
 func (s *Service) Start() error {
 
 	var rerr error
 
-	if _, err := os.Stat(s.us); !os.IsNotExist(err) {
-		err := syscall.Unlink(s.us)
+	if s.socket == nil {
+		return fmt.Errorf("unix socket must be defined")
+	}
+
+	if _, err := os.Stat(*s.socket); !os.IsNotExist(err) {
+		err := syscall.Unlink(*s.socket)
 		if err != nil {
 			return err
 		}
 	}
 
-	us, err := net.Listen("unix", s.us)
+	us, err := net.Listen("unix", *s.socket)
 	if err != nil {
 		return err
 	}
 
 	if err = os.Chmod(
-		s.us,
-		os.FileMode(s.usMode),
+		*s.socket,
+		os.FileMode(s.socketMode),
 	); err != nil {
 		return err
 	}
@@ -47,4 +52,25 @@ func (s *Service) Start() error {
 	}()
 
 	return rerr
+}
+
+// StartTCPTLS binds the RPCHandler to the server route and starts the HTTP server over TCP.
+func (s *Service) StartTCPTLS() error {
+
+	if s.address == nil {
+		return fmt.Errorf("address must be defined")
+	}
+
+	if _, err := os.Stat(s.cert); os.IsNotExist(err) {
+		return fmt.Errorf("certificate file must exists")
+	}
+
+	if _, err := os.Stat(s.key); os.IsNotExist(err) {
+		return fmt.Errorf("certificate key file must exists")
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle(s.route, s)
+
+	return http.ListenAndServeTLS(*s.address, s.cert, s.key, mux)
 }
