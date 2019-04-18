@@ -31,16 +31,16 @@ func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, e
 
 	// custom transport config
 	tr := &http.Transport{
-		DisableCompression: c.DisableCompression,
+		DisableCompression: c.disableCompression,
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: c.InsecureSkipVerify, // nolint: gosec
+			InsecureSkipVerify: c.insecureSkipVerify, // nolint: gosec
 		},
 	}
 
 	// custom transport config for unix socket
-	if len(c.SocketPath) > 0 {
+	if c.socketPath != nil {
 		tr.DialContext = func(_ context.Context, _, _ string) (net.Conn, error) {
-			return net.Dial("unix", c.SocketPath)
+			return net.Dial("unix", *c.socketPath)
 		}
 	}
 
@@ -62,26 +62,32 @@ func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, e
 	buf := bytes.NewBuffer(reqData)
 
 	// set request type to POST
-	req, err := http.NewRequest("POST", c.URI, buf)
+	req, err := http.NewRequest("POST", c.uri, buf)
 	if err != nil {
 		return nil, fmt.Errorf("JSON-RPC error: %s", err.Error())
 	}
 
 	// setting specified headers
-	for k, v := range c.Headers {
+	for k, v := range c.headers {
 		req.Header.Set(k, v)
 	}
 
 	// set compression header
-	if !c.DisableCompression {
+	if !c.disableCompression {
 		req.Header.Set("Content-Encoding", "gzip")
+	}
+
+	// add X-Real-IP, X-Client-IP, when using unix sockets mode
+	if c.socketPath != nil {
+		req.Header.Set("X-Real-IP", "127.0.0.1")
+		req.Header.Set("X-Client-IP", "127.0.0.1")
 	}
 
 	// prepare response
 	var resp *http.Response
 
 	// set timeout
-	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
 	// send request

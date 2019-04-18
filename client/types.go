@@ -8,20 +8,20 @@ import (
 // Config - config object for JSON-RPC Call
 type Config struct {
 	// JSON-RPC FQDN URI
-	URI string
+	uri string
 	// JSON-RPC Unix Socket Path
-	SocketPath string
+	socketPath *string
 
 	// Custom HTTP headers for POST request
-	Headers map[string]string
+	headers map[string]string
 
 	// Context response timeout
-	Timeout time.Duration
+	timeout time.Duration
 
 	// TCP gzip compression, also sets needed headers
-	DisableCompression bool
+	disableCompression bool
 	// Ignore invalid HTTPS certificates
-	InsecureSkipVerify bool
+	insecureSkipVerify bool
 }
 
 // RequestObject represents a request object
