@@ -1377,11 +1377,15 @@ func TestRespHookFailed(t *testing.T) {
 		serverSocket,
 		postHeaders,
 	)
-	_noerr(t, err)
+	if err != nil {
+		t.Fatalf("unexpected error '%s'", err)
+	}
 
 	defer func() {
 		err = response.Body.Close()
-		_noerr(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error '%s'", err)
+		}
 	}()
 
 	_verifyequal(t, response.StatusCode, http.StatusInternalServerError)
@@ -1410,11 +1414,15 @@ func TestRespHookFailedCustomError(t *testing.T) {
 		serverSocket,
 		postHeaders,
 	)
-	_noerr(t, err)
+	if err != nil {
+		t.Fatalf("unexpected error '%s'", err)
+	}
 
 	defer func() {
 		err = response.Body.Close()
-		_noerr(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error '%s'", err)
+		}
 	}()
 
 	_verifyequal(t, response.StatusCode, http.StatusUnavailableForLegalReasons)
@@ -1439,11 +1447,15 @@ func TestReqHookFailed(t *testing.T) {
 		serverSocket,
 		postHeaders,
 	)
-	_noerr(t, err)
+	if err != nil {
+		t.Fatalf("unexpected error '%s'", err)
+	}
 
 	defer func() {
 		err = resp.Body.Close()
-		_noerr(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error '%s'", err)
+		}
 	}()
 
 	_verifyequal(t, resp.StatusCode, http.StatusInternalServerError)
@@ -1471,11 +1483,15 @@ func TestReqHookFailedCustomError(t *testing.T) {
 		serverSocket,
 		postHeaders,
 	)
-	_noerr(t, err)
+	if err != nil {
+		t.Fatalf("unexpected error '%s'", err)
+	}
 
 	defer func() {
 		err = resp.Body.Close()
-		_noerr(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error '%s'", err)
+		}
 	}()
 
 	_verifyequal(t, resp.StatusCode, http.StatusUnavailableForLegalReasons)
@@ -1579,7 +1595,6 @@ func TestGetPositionalFloat64Params(t *testing.T) {
 	po.params = []byte(`["foo","bar","go"]`)
 	_, err = GetPositionalFloat64Params(po)
 	_verifyerrobj(t, err, InvalidParamsCode, InvalidParamsMessage)
-
 }
 
 func TestGetPositionalIntParams(t *testing.T) {
@@ -1607,7 +1622,6 @@ func TestGetPositionalIntParams(t *testing.T) {
 
 	_, err = GetPositionalIntParams(po)
 	_verifyerrobj(t, err, InvalidParamsCode, InvalidParamsMessage)
-
 }
 
 func TestGetPositionalUintParams(t *testing.T) {
@@ -1636,7 +1650,6 @@ func TestGetPositionalUintParams(t *testing.T) {
 
 	_, err = GetPositionalUintParams(po)
 	_verifyerrobj(t, err, InvalidParamsCode, InvalidParamsMessage)
-
 }
 
 func TestGetPositionalStringParams(t *testing.T) {
@@ -1788,12 +1801,5 @@ func _verifyerrobj(t *testing.T, err *ErrorObject, code int, message string) {
 func _verifyequal(t *testing.T, a, b interface{}) {
 	if !reflect.DeepEqual(a, b) {
 		t.Fatalf("expecting '%v' to be equal to '%v'", a, b)
-	}
-}
-
-// verifies that err==nil
-func _noerr(t *testing.T, err error) {
-	if err != nil {
-		t.Fatalf("unexpected error '%s'", err)
 	}
 }
