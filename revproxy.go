@@ -3,27 +3,36 @@ package jrpc2
 import (
 	"net"
 	"net/http"
+	"strings"
 )
 
 // GetRealClientAddress attempts to acquire client IP from upstream reverse proxy.
 func GetRealClientAddress(r *http.Request) string {
 
 	// check X-Real-IP header
-	if val := r.Header.Get("X-Real-IP"); net.ParseIP(val) != nil {
-		return val
+	val := r.Header.Get("X-Real-IP")
+	if ip := net.ParseIP(val); ip != nil {
+		return ip.String()
 	}
 
 	// check X-Client-IP header
-	if val := r.Header.Get("X-Client-IP"); net.ParseIP(val) != nil {
-		return val
+	val = r.Header.Get("X-Client-IP")
+	if ip := net.ParseIP(val); ip != nil {
+		return ip.String()
 	}
 
 	// check r.RemoteAddr variable
 	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
-		return host
+
+		// parse IP from host
+		if ip := net.ParseIP(host); ip != nil {
+			return ip.String()
+		}
+
+		return strings.TrimSpace(host)
 	}
 
-	return r.RemoteAddr
+	return strings.TrimSpace(r.RemoteAddr)
 }
 
 // GetRealHostAddress attempts to acquire original HOST from upstream reverse proxy.
@@ -31,8 +40,8 @@ func GetRealHostAddress(r *http.Request) string {
 
 	// check X-Forwarded-Host header
 	if val := r.Header.Get("X-Forwarded-Host"); val != "" {
-		return val
+		return strings.TrimSpace(val)
 	}
 
-	return r.Host
+	return strings.TrimSpace(r.Host)
 }

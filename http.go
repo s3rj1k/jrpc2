@@ -65,8 +65,16 @@ func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
 	}
 }
 
-// ServeHTTP implements needed interface for http library, handles incoming RPC client requests, generates responses.
+// ServeHTTP implements needed interface for HTTP library, handles incoming RPC client requests, generates responses.
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	// check Basic Authorization
+	if err := s.CheckAuthorization(r); err != nil {
+		// set response header to 403, (forbidden)
+		w.WriteHeader(http.StatusForbidden)
+
+		return
+	}
 
 	// create empty error object
 	var errObj *ErrorObject

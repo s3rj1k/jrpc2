@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,17 +25,26 @@ import (
 
 // go test -coverprofile=cover.out && go tool cover -html=cover.out -o cover.html
 
-const serverSocket = "/tmp/jrpc2_server.socket"
-const proxySocket = "/tmp/jrpc2_proxy.socket"
+const (
+	username = "user"
+	password = "pwd"
 
-const serverRoute = "/jrpc"
-const proxyRoute = "/proxy"
+	serverSocket = "/tmp/jrpc2_server.socket"
+	authSocket   = "/tmp/jrpc2_auth.socket"
+	proxySocket  = "/tmp/jrpc2_proxy.socket"
+
+	serverRoute = "/jrpc"
+	authRoute   = "/auth"
+	proxyRoute  = "/proxy"
+)
 
 // nolint:gochecknoglobals
 var (
-	serverService, proxyService *Service
-	serverURL                   = fmt.Sprintf("http://localhost%s", serverRoute)
-	proxyURL                    = fmt.Sprintf("http://localhost%s", proxyRoute)
+	serverService, authService, proxyService *Service
+
+	serverURL = fmt.Sprintf("http://localhost%s", serverRoute)
+	authURL   = fmt.Sprintf("http://localhost%s", authRoute)
+	proxyURL  = fmt.Sprintf("http://localhost%s", proxyRoute)
 
 	postHeaders = map[string]string{
 		"Accept":       "application/json", // set Accept header
@@ -165,14 +175,17 @@ func setup() {
 
 	// Remove old Unix Socket
 	if _, err := os.Stat(serverSocket); !os.IsNotExist(err) {
-		err := os.Remove(serverSocket)
-		if err != nil {
+		if err := os.Remove(serverSocket); err != nil {
+			log.Fatalln(err)
+		}
+	}
+	if _, err := os.Stat(authSocket); !os.IsNotExist(err) {
+		if err := os.Remove(authSocket); err != nil {
 			log.Fatalln(err)
 		}
 	}
 	if _, err := os.Stat(proxySocket); !os.IsNotExist(err) {
-		err := os.Remove(proxySocket)
-		if err != nil {
+		if err := os.Remove(proxySocket); err != nil {
 			log.Fatalln(err)
 		}
 	}
@@ -195,8 +208,31 @@ func setup() {
 		serverService.Register("subtract", Subtract)
 		serverService.Register("nilmethod", nil)
 
-		err := serverService.Start()
-		if err != nil {
+		if err := serverService.Start(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	go func() {
+		authService = Create(authSocket)
+		authService.SetRoute(authRoute)
+		authService.SetHeaders(
+			map[string]string{
+				"Server":                        "JSON-RPC/2.0 (Golang)",
+				"Access-Control-Allow-Origin":   "*",
+				"Access-Control-Expose-Headers": "Content-Type",
+				"Access-Control-Allow-Methods":  "POST",
+				"Access-Control-Allow-Headers":  "Content-Type",
+			},
+		)
+
+		if err := authService.AddAuthorizationFromNetwork("127.0.0.1/32", username, password); err != nil {
+			log.Fatal(err)
+		}
+
+		authService.Register("update", Update)
+
+		if err := authService.Start(); err != nil {
 			log.Fatal(err)
 		}
 	}()
@@ -216,8 +252,7 @@ func setup() {
 
 		proxyService.RegisterProxy(CopyParamsData)
 
-		err := proxyService.Start()
-		if err != nil {
+		if err := proxyService.Start(); err != nil {
 			log.Fatal(err)
 		}
 	}()
@@ -226,6 +261,12 @@ func setup() {
 	for {
 		time.Sleep(1 * time.Millisecond)
 		if _, err := os.Stat(serverSocket); !os.IsNotExist(err) {
+			break
+		}
+	}
+	for {
+		time.Sleep(1 * time.Millisecond)
+		if _, err := os.Stat(authSocket); !os.IsNotExist(err) {
 			break
 		}
 	}
@@ -526,6 +567,103 @@ func TestResponseHeaders(t *testing.T) {
 	}
 	if v := resp.Header.Get("Server"); v != "JSON-RPC/2.0 (Golang)" {
 		t.Fatal("got unexpected Server value")
+	}
+}
+
+func TestClientLibraryBasicAuth(t *testing.T) {
+
+	c := client.GetSocketConfig(authSocket, authRoute)
+	c.SetBasicAuth(username, password)
+
+	if _, err := c.Call("update", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	c = client.GetSocketConfig(authSocket, authRoute)
+	if _, err := c.Call("update", nil); err == nil {
+		t.Fatal(err)
+	}
+}
+
+func TestBasicAuth(t *testing.T) {
+
+	headers := postHeaders
+	headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString(
+		[]byte(username+":"+password),
+	)
+
+	resp, err := httpPost(
+		authURL,
+		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
+		authSocket,
+		headers,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		err = resp.Body.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected HTTP status code to be '%d', got '%d'", http.StatusOK, resp.StatusCode)
+	}
+}
+
+func TestBasicAuthInvalidAccount(t *testing.T) {
+
+	headers := postHeaders
+	headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString(
+		[]byte(username+"fail:fail"+password),
+	)
+
+	resp, err := httpPost(
+		authURL,
+		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
+		authSocket,
+		headers,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		err = resp.Body.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("expected HTTP status code to be '%d', got '%d'", http.StatusOK, resp.StatusCode)
+	}
+}
+
+func TestBasicAuthNoAuthorizationHeader(t *testing.T) {
+
+	resp, err := httpPost(
+		authURL,
+		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
+		authSocket,
+		postHeaders,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		err = resp.Body.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("expected HTTP status code to be '%d', got '%d'", http.StatusOK, resp.StatusCode)
 	}
 }
 
