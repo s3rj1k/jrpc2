@@ -1534,10 +1534,10 @@ func TestRespHookFailedCustomError(t *testing.T) {
 	oldresp := serverService.resp
 	serverService.SetResponseHookFunction(
 		func(r *http.Request, data []byte) error {
-			return &HookError{
-				err:      "hook failed error",
-				httpCode: http.StatusUnavailableForLegalReasons,
-			}
+			return NewHookError(
+				"hook failed error",
+				http.StatusUnavailableForLegalReasons,
+			)
 		},
 	)
 
@@ -1604,10 +1604,10 @@ func TestReqHookFailedCustomError(t *testing.T) {
 	oldreq := serverService.req
 	serverService.SetRequestHookFunction(
 		func(r *http.Request, data []byte) error {
-			return &HookError{
-				err:      "hook failed error",
-				httpCode: http.StatusUnavailableForLegalReasons,
-			}
+			return NewHookError(
+				"hook failed error",
+				http.StatusUnavailableForLegalReasons,
+			)
 		},
 	)
 	// teardown code

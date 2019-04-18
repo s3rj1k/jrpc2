@@ -6,141 +6,152 @@ import (
 
 // HookError custom error for Request/Response hook.
 type HookError struct {
-	err      string
-	httpCode int
+	ErrorMsg string
+	HTTPCode int
 }
 
+// NewHookError creates new hook function error.
+func NewHookError(msg string, code int) *HookError {
+	err := new(HookError)
+
+	err.ErrorMsg = msg
+	err.HTTPCode = code
+
+	return err
+}
+
+// Error defines method to sutisfy defoult error interface.
 func (e *HookError) Error() string {
-	return e.err
+	return e.ErrorMsg
 }
 
 // nolint: gocyclo
 func getHTTPCodeFromHookError(err error) int {
 	switch v := err.(type) {
 	case *HookError:
-		switch v.httpCode {
+		switch v.HTTPCode {
 		case http.StatusContinue:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusSwitchingProtocols:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusProcessing:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusOK:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusCreated:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusAccepted:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusNonAuthoritativeInfo:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusNoContent:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusResetContent:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusPartialContent:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusMultiStatus:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusAlreadyReported:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusIMUsed:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusMultipleChoices:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusMovedPermanently:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusFound:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusSeeOther:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusNotModified:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusUseProxy:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusTemporaryRedirect:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusPermanentRedirect:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusBadRequest:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusUnauthorized:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusPaymentRequired:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusForbidden:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusNotFound:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusMethodNotAllowed:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusNotAcceptable:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusProxyAuthRequired:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusRequestTimeout:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusConflict:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusGone:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusLengthRequired:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusPreconditionFailed:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusRequestEntityTooLarge:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusRequestURITooLong:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusUnsupportedMediaType:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusRequestedRangeNotSatisfiable:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusExpectationFailed:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusTeapot:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusMisdirectedRequest:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusUnprocessableEntity:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusLocked:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusFailedDependency:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusTooEarly:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusUpgradeRequired:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusPreconditionRequired:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusTooManyRequests:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusRequestHeaderFieldsTooLarge:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusUnavailableForLegalReasons:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusInternalServerError:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusNotImplemented:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusBadGateway:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusServiceUnavailable:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusGatewayTimeout:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusHTTPVersionNotSupported:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusVariantAlsoNegotiates:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusInsufficientStorage:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusLoopDetected:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusNotExtended:
-			return v.httpCode
+			return v.HTTPCode
 		case http.StatusNetworkAuthenticationRequired:
-			return v.httpCode
+			return v.HTTPCode
 		default:
 			// set response header to 500, (internal server error)
 			return http.StatusInternalServerError
