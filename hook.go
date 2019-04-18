@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// HookError custom error for Request/Response hook
+// HookError custom error for Request/Response hook.
 type HookError struct {
 	err      string
 	httpCode int
