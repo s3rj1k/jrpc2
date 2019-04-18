@@ -36,7 +36,6 @@ warningCode = 0
 [rule.modifies-parameter]
 [rule.confusing-results]
 [rule.deep-exit]
-#[rule.add-constant]
 [rule.flag-parameter]
 [rule.unnecessary-stmt]
 [rule.struct-tag]
