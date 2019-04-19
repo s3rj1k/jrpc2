@@ -132,7 +132,7 @@ func (s *Service) setReqestContextEarly(r *http.Request) *http.Request {
 
 	ctx := r.Context()
 
-	ctx = contextWithBehindReverseProxyFlag(ctx, s.behidReverseProxy)
+	ctx = contextWithBehindReverseProxyFlag(ctx, s.behindReverseProxy)
 	ctx = contextWithUnixSocketPath(ctx, s.socket)
 	ctx = contextWithUnixSocketMode(ctx, s.socketMode)
 	ctx = contextWithNetworkAddress(ctx, s.address)

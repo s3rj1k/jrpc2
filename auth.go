@@ -33,7 +33,7 @@ func (s *Service) CheckAuthorization(r *http.Request) error {
 		}
 
 		// get remote client IP
-		if s.behidReverseProxy {
+		if s.behindReverseProxy {
 			remoteIP = GetClientAddressFromHeader(r)
 		} else {
 			remoteIP = GetClientAddressFromRequest(r)

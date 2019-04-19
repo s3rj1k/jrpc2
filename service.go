@@ -24,7 +24,7 @@ type Service struct {
 
 	proxy bool // enables JSON-RPC (catch-all) proxy working mode
 
-	behidReverseProxy bool // flags that changes behavior of some internal methods (X-Real-IP, X-Client-IP)
+	behindReverseProxy bool // flags that changes behavior of some internal methods (X-Real-IP, X-Client-IP)
 
 	methods map[string]method       // mapping of registered methods
 	headers map[string]string       // custom response headers
@@ -42,7 +42,7 @@ func Create(socket string) *Service {
 
 		route: "/",
 
-		behidReverseProxy: true,
+		behindReverseProxy: true,
 
 		headers: make(map[string]string),
 		methods: make(map[string]method),
@@ -71,7 +71,7 @@ func CreateOverTCPWithTLS(address, route, key, cert string) *Service {
 
 		route: route,
 
-		behidReverseProxy: false,
+		behindReverseProxy: false,
 
 		headers: make(map[string]string),
 		methods: make(map[string]method),
@@ -96,7 +96,7 @@ func CreateProxy(socket string) *Service {
 
 		route: "/",
 
-		behidReverseProxy: true,
+		behindReverseProxy: true,
 
 		headers: make(map[string]string),
 		methods: nil,
@@ -123,7 +123,7 @@ func CreateProxyOverTCPWithTLS(address, route, key, cert string) *Service {
 
 		route: route,
 
-		behidReverseProxy: false,
+		behindReverseProxy: false,
 
 		headers: make(map[string]string),
 		methods: nil,
@@ -193,12 +193,12 @@ func (s *Service) GetRoute() string {
 
 // SetBehidReverseProxyFlag sets behid reverse proxy flag in service object.
 func (s *Service) SetBehidReverseProxyFlag(flag bool) {
-	s.behidReverseProxy = flag
+	s.behindReverseProxy = flag
 }
 
 // GetBehidReverseProxyFlag gets behid reverse proxy flag from service object.
 func (s *Service) GetBehidReverseProxyFlag() bool {
-	return s.behidReverseProxy
+	return s.behindReverseProxy
 }
 
 // SetCertificateFilePath sets path to Certificate file in service object.
