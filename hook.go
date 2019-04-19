@@ -20,7 +20,7 @@ func NewHookError(msg string, code int) *HookError {
 	return err
 }
 
-// Error defines method to sutisfy defoult error interface.
+// Error defines method to satisfy default error interface.
 func (e *HookError) Error() string {
 	return e.ErrorMsg
 }
