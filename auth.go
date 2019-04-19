@@ -12,6 +12,8 @@ func (s *Service) CheckAuthorization(r *http.Request) error {
 
 	const prefix = "Basic "
 
+	var remoteIP net.IP
+
 	// check Authorization then enabled
 	if s.auth != nil {
 
@@ -30,8 +32,14 @@ func (s *Service) CheckAuthorization(r *http.Request) error {
 			return errors.New("not authorized")
 		}
 
-		// get request IP
-		remoteIP := net.ParseIP(GetRealClientAddress(r))
+		// get remote client IP
+		if s.behidReverseProxy {
+			remoteIP = GetClientAddressFromHeader(r)
+		} else {
+			remoteIP = GetClientAddressFromRequest(r)
+		}
+
+		// not a valid IP
 		if remoteIP == nil {
 			return errors.New("not authorized")
 		}

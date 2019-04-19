@@ -12,21 +12,23 @@ import (
 type Service struct {
 	// fields below are intentionally unexported
 
-	address *string // address (IP:PORT) for TCP socket to bind listener to
-	socket  *string // unix socket path for the server
-
 	cert string // path to cert.pem (for TCP with TLS)
 	key  string // path to key.pem (for TCP with TLS)
 
 	route string // path to the JSON-RPC 2.0 HTTP endpoint
 
-	methods map[string]method       // mapping of registered methods
-	headers map[string]string       // custom response headers
-	auth    map[string][]*net.IPNet // contains mapping of allowed remote network to HTTP Authorization header
+	socket  *string // unix socket path for the server
+	address *string // address (IP:PORT) for TCP socket to bind listener to
 
 	socketMode uint32 // unix socket permissions, mode bits
 
 	proxy bool // enables JSON-RPC (catch-all) proxy working mode
+
+	behidReverseProxy bool // flags that changes behavior of some internal methods (X-Real-IP, X-Client-IP)
+
+	methods map[string]method       // mapping of registered methods
+	headers map[string]string       // custom response headers
+	auth    map[string][]*net.IPNet // contains mapping of allowed remote network to HTTP Authorization header
 
 	req  func(r *http.Request, data []byte) error // defines request function hook, runs just after request body is read
 	resp func(r *http.Request, data []byte) error // defines response function hook, runs just before response is written
@@ -39,6 +41,8 @@ func Create(socket string) *Service {
 		socketMode: 0777,
 
 		route: "/",
+
+		behidReverseProxy: true,
 
 		headers: make(map[string]string),
 		methods: make(map[string]method),
@@ -67,6 +71,8 @@ func CreateOverTCPWithTLS(address, route, key, cert string) *Service {
 
 		route: route,
 
+		behidReverseProxy: false,
+
 		headers: make(map[string]string),
 		methods: make(map[string]method),
 		auth:    nil,
@@ -89,6 +95,8 @@ func CreateProxy(socket string) *Service {
 		socketMode: 0777,
 
 		route: "/",
+
+		behidReverseProxy: true,
 
 		headers: make(map[string]string),
 		methods: nil,
@@ -115,6 +123,8 @@ func CreateProxyOverTCPWithTLS(address, route, key, cert string) *Service {
 
 		route: route,
 
+		behidReverseProxy: false,
+
 		headers: make(map[string]string),
 		methods: nil,
 		auth:    nil,
@@ -130,7 +140,7 @@ func CreateProxyOverTCPWithTLS(address, route, key, cert string) *Service {
 	}
 }
 
-// SetSocket sets custom unix socket for service object.
+// SetSocket sets custom unix socket in service object.
 func (s *Service) SetSocket(socket string) {
 	s.socket = &socket
 }
@@ -140,7 +150,7 @@ func (s *Service) GetSocket() string {
 	return *s.socket
 }
 
-// SetAddress sets custom network address for service object.
+// SetAddress sets custom network address in service object.
 func (s *Service) SetAddress(address string) {
 	s.address = &address
 }
@@ -150,17 +160,17 @@ func (s *Service) GetAddress() string {
 	return *s.address
 }
 
-// SetSocketPermissions sets custom unix socket permissions for service object.
+// SetSocketPermissions sets custom unix socket permissions in service object.
 func (s *Service) SetSocketPermissions(mode uint32) {
 	s.socketMode = mode
 }
 
-// GetSocketPermissions gets custom unix socket permissions for service object.
+// GetSocketPermissions gets custom unix socket permissions in service object.
 func (s *Service) GetSocketPermissions() uint32 {
 	return s.socketMode
 }
 
-// SetRoute sets custom route for service object.
+// SetRoute sets custom route in service object.
 func (s *Service) SetRoute(route string) {
 
 	route = strings.TrimSpace(route)
@@ -179,6 +189,16 @@ func (s *Service) SetRoute(route string) {
 // GetRoute gets custom route from service object.
 func (s *Service) GetRoute() string {
 	return s.route
+}
+
+// SetBehidReverseProxyFlag sets behid reverse proxy flag in service object.
+func (s *Service) SetBehidReverseProxyFlag(flag bool) {
+	s.behidReverseProxy = flag
+}
+
+// GetBehidReverseProxyFlag gets behid reverse proxy flag from service object.
+func (s *Service) GetBehidReverseProxyFlag() bool {
+	return s.behidReverseProxy
 }
 
 // SetCertificateFilePath sets path to Certificate file in service object.
@@ -201,7 +221,7 @@ func (s *Service) GetCertificateKeyFilePath() string {
 	return s.key
 }
 
-// SetHeaders sets custom headers for service object.
+// SetHeaders sets custom headers in service object.
 func (s *Service) SetHeaders(headers map[string]string) {
 	s.headers = headers
 }
