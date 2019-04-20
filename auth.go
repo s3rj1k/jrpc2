@@ -9,14 +9,12 @@ import (
 
 // CheckAuthorization checks Basic Authorization then enabled by service configuration.
 func (s *Service) CheckAuthorization(r *http.Request) error {
-
 	const prefix = "Basic "
 
 	var remoteIP net.IP
 
 	// check Authorization then enabled
 	if s.auth != nil {
-
 		// get Authorization header
 		auth := r.Header.Get("Authorization")
 		if strings.TrimSpace(auth) == "" {

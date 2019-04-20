@@ -8,7 +8,6 @@ import (
 
 // ValidateHTTPProtocolVersion validates HTTP protocol version.
 func (responseObject *ResponseObject) ValidateHTTPProtocolVersion(r *http.Request) bool {
-
 	// check request protocol version
 	if r.Proto != "HTTP/1.1" { // nolint: goconst
 		responseObject.Error = &ErrorObject{
@@ -28,7 +27,6 @@ func (responseObject *ResponseObject) ValidateHTTPProtocolVersion(r *http.Reques
 
 // ValidateHTTPRequestMethod validates HTTP request method.
 func (responseObject *ResponseObject) ValidateHTTPRequestMethod(r *http.Request) bool {
-
 	// check request Method
 	if r.Method != http.MethodPost {
 		responseObject.Error = &ErrorObject{
@@ -51,7 +49,6 @@ func (responseObject *ResponseObject) ValidateHTTPRequestMethod(r *http.Request)
 
 // ValidateHTTPRequestHeaders validates HTTP request headers.
 func (responseObject *ResponseObject) ValidateHTTPRequestHeaders(r *http.Request) bool {
-
 	// check request Content-Type header
 	if !strings.EqualFold(r.Header.Get("Content-Type"), "application/json") {
 		responseObject.Error = &ErrorObject{
@@ -85,7 +82,6 @@ func (responseObject *ResponseObject) ValidateHTTPRequestHeaders(r *http.Request
 
 // ValidateJSONRPCVersionNumber validates JSON-RPC 2.0 request version member.
 func (responseObject *ResponseObject) ValidateJSONRPCVersionNumber(version string) bool {
-
 	// validate JSON-RPC 2.0 request version member
 	if version != JSONRPCVersion {
 		responseObject.Error = &ErrorObject{

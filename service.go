@@ -172,7 +172,6 @@ func (s *Service) GetSocketPermissions() uint32 {
 
 // SetRoute sets custom route in service object.
 func (s *Service) SetRoute(route string) {
-
 	route = strings.TrimSpace(route)
 
 	if len(route) == 0 {
@@ -266,7 +265,6 @@ func (s *Service) SetResponseHookFunction(f func(r *http.Request, data []byte) e
 // AddAuthorizationFromNetwork adds (enables) Basic Authorization from supplyed remote network.
 // Then at least one mapping exists, Basic Authorization is enabled, default action is Deny Access.
 func (s *Service) AddAuthorizationFromNetwork(network, username, password string) error {
-
 	// symbol ':' is a delimiter, must not be in username or/and password
 	if strings.Contains(username, ":") {
 		return fmt.Errorf("username '%s' must not contain ':'", username)

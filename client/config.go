@@ -8,7 +8,6 @@ import (
 
 // GetConfig - returns default JSON-RPC Call config
 func GetConfig(url string) *Config {
-
 	c := new(Config)
 
 	c.uri = url
@@ -29,7 +28,6 @@ func GetConfig(url string) *Config {
 
 // GetSocketConfig - returns default JSON-RPC Call config using Unix-Socket
 func GetSocketConfig(socket, endpoint string) *Config {
-
 	c := new(Config)
 
 	c.uri = fmt.Sprintf("http://localhost%s", endpoint)

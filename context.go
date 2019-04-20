@@ -129,7 +129,6 @@ func staticHeadersFromContext(ctx context.Context) map[string]string { // nolint
 }
 
 func (s *Service) setReqestContextEarly(r *http.Request) *http.Request {
-
 	ctx := r.Context()
 
 	ctx = contextWithBehindReverseProxyFlag(ctx, s.behindReverseProxy)
@@ -146,7 +145,6 @@ func (s *Service) setReqestContextEarly(r *http.Request) *http.Request {
 }
 
 func (s *Service) setReqestContextLate(r *http.Request, respObj *ResponseObject) *http.Request {
-
 	ctx := r.Context()
 
 	ctx = contextWithNotificationFlag(ctx, respObj.notification)

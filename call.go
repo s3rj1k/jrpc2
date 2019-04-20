@@ -6,7 +6,6 @@ import (
 
 // Call invokes the named method with the provided parameters.
 func (s *Service) Call(name string, data ParametersObject) (interface{}, *ErrorObject) {
-
 	// check that request method member is not empty string
 	if strings.TrimSpace(name) == "" {
 		return nil, &ErrorObject{

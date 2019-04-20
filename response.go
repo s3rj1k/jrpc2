@@ -28,7 +28,6 @@ type ResponseObject struct {
 
 // DefaultResponseObject initializes default response object.
 func DefaultResponseObject() *ResponseObject {
-
 	respObj := new(ResponseObject)
 
 	// set JSON-RPC response version
@@ -47,7 +46,6 @@ func DefaultResponseObject() *ResponseObject {
 
 // Marshal create a bytes encoded representation of a single response object.
 func (r *ResponseObject) Marshal() []byte {
-
 	b, err := json.Marshal(r)
 	if err != nil {
 		return []byte(

@@ -10,7 +10,6 @@ import (
 
 // Start binds the RPCHandler to the server route and starts the HTTP server over Unix Socket.
 func (s *Service) Start() error {
-
 	var rerr error
 
 	if s.socket == nil {
@@ -60,7 +59,6 @@ func (s *Service) Start() error {
 
 // StartTCPTLS binds the RPCHandler to the server route and starts the HTTP server over TCP.
 func (s *Service) StartTCPTLS() error {
-
 	if s.address == nil {
 		return fmt.Errorf("network address must be defined")
 	}

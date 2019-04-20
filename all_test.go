@@ -81,7 +81,6 @@ type SubtractParams struct {
 }
 
 func CopyParamsData(data ParametersObject) (interface{}, *ErrorObject) {
-
 	var out CopyParamsDataResponse
 
 	out.RemoteAddress = data.GetRemoteAddress()
@@ -94,12 +93,10 @@ func CopyParamsData(data ParametersObject) (interface{}, *ErrorObject) {
 }
 
 func Subtract(data ParametersObject) (interface{}, *ErrorObject) {
-
 	paramObj := new(SubtractParams)
 
 	err := json.Unmarshal(data.GetRawJSONParams(), paramObj)
 	if err != nil {
-
 		errObj := &ErrorObject{
 			Code:    ParseErrorCode,
 			Message: ParseErrorMessage,
@@ -154,7 +151,6 @@ func Update(_ ParametersObject) (interface{}, *ErrorObject) {
 
 //revive:disable:deep-exit
 func TestMain(m *testing.M) {
-
 	// Seed random
 	rand.Seed(time.Now().UnixNano())
 
@@ -289,7 +285,6 @@ func TestMain(m *testing.M) {
 
 // httpPost is a wrapper for HTTP POST
 func httpPost(url, request, socket string, headers map[string]string) (*http.Response, error) {
-
 	// request data
 	buf := bytes.NewBuffer([]byte(r.Replace(request)))
 
@@ -318,7 +313,6 @@ func httpPost(url, request, socket string, headers map[string]string) (*http.Res
 }
 
 func TestClientLibrary(t *testing.T) {
-
 	var result int
 
 	c := client.GetSocketConfig(serverSocket, serverRoute)
@@ -346,7 +340,6 @@ func TestClientLibrary(t *testing.T) {
 }
 
 func TestNonPOSTRequestType(t *testing.T) {
-
 	var result Result
 
 	// prepare default http client config over Unix Socket
@@ -403,7 +396,6 @@ func TestNonPOSTRequestType(t *testing.T) {
 }
 
 func TestRequestHeaderWrongContentType(t *testing.T) {
-
 	var result Result
 
 	resp, err := httpPost(
@@ -456,7 +448,6 @@ func TestRequestHeaderWrongContentType(t *testing.T) {
 }
 
 func TestRequestHeaderWrongAccept(t *testing.T) {
-
 	var result Result
 
 	resp, err := httpPost(
@@ -509,7 +500,6 @@ func TestRequestHeaderWrongAccept(t *testing.T) {
 }
 
 func TestWrongEndpoint(t *testing.T) {
-
 	resp, err := httpPost(
 		// wrong URL (404 response) for non-root endpoint, https://golang.org/pkg/net/http/#ServeMux
 		fmt.Sprintf("http://localhost%s", "/WRONG"),
@@ -542,7 +532,6 @@ func TestWrongEndpoint(t *testing.T) {
 }
 
 func TestResponseHeaders(t *testing.T) {
-
 	resp, err := httpPost(
 		serverURL,
 		`{}`,
@@ -569,7 +558,6 @@ func TestResponseHeaders(t *testing.T) {
 }
 
 func TestClientLibraryBasicAuth(t *testing.T) {
-
 	c := client.GetSocketConfig(authSocket, authRoute)
 	c.SetBasicAuth(username, password)
 
@@ -584,7 +572,6 @@ func TestClientLibraryBasicAuth(t *testing.T) {
 }
 
 func TestBasicAuth(t *testing.T) {
-
 	headers := postHeaders
 	headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString(
 		[]byte(username+":"+password),
@@ -613,7 +600,6 @@ func TestBasicAuth(t *testing.T) {
 }
 
 func TestBasicAuthInvalidAccount(t *testing.T) {
-
 	headers := postHeaders
 	headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString(
 		[]byte(username+"fail:fail"+password),
@@ -642,7 +628,6 @@ func TestBasicAuthInvalidAccount(t *testing.T) {
 }
 
 func TestBasicAuthNoAuthorizationHeader(t *testing.T) {
-
 	resp, err := httpPost(
 		authURL,
 		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
@@ -666,7 +651,6 @@ func TestBasicAuthNoAuthorizationHeader(t *testing.T) {
 }
 
 func TestIDStringType(t *testing.T) {
-
 	var result Result
 
 	resp, err := httpPost(
@@ -710,7 +694,6 @@ func TestIDStringType(t *testing.T) {
 }
 
 func TestIDNumberType(t *testing.T) {
-
 	var result Result
 
 	resp, err := httpPost(
@@ -754,7 +737,6 @@ func TestIDNumberType(t *testing.T) {
 }
 
 func TestInternalParamsPassthrough(t *testing.T) {
-
 	var result Result
 
 	resp, err := httpPost(
@@ -820,7 +802,6 @@ func TestInternalParamsPassthrough(t *testing.T) {
 }
 
 func TestProxyInternalParamsPassthrough(t *testing.T) {
-
 	var result Result
 
 	resp, err := httpPost(
@@ -889,7 +870,6 @@ func TestProxyInternalParamsPassthrough(t *testing.T) {
 }
 
 func TestIDTypeError(t *testing.T) {
-
 	reqList := make([]string, 0)
 	reqList = append(
 		reqList,
@@ -899,7 +879,6 @@ func TestIDTypeError(t *testing.T) {
 	)
 
 	for _, el := range reqList {
-
 		var result Result
 
 		resp, err := httpPost(
@@ -950,7 +929,6 @@ func TestIDTypeError(t *testing.T) {
 }
 
 func TestNonExistentMethod(t *testing.T) {
-
 	var result Result
 
 	resp, err := httpPost(
@@ -998,7 +976,6 @@ func TestNonExistentMethod(t *testing.T) {
 }
 
 func TestInvalidMethodObjectType(t *testing.T) {
-
 	var result Result
 
 	resp, err := httpPost(
@@ -1048,7 +1025,6 @@ func TestInvalidMethodObjectType(t *testing.T) {
 }
 
 func TestNamedParameters(t *testing.T) {
-
 	var result Result
 
 	resp, err := httpPost(
@@ -1095,13 +1071,11 @@ func TestNamedParameters(t *testing.T) {
 }
 
 func TestNotification(t *testing.T) {
-
 	req := `{"jsonrpc": "2.0", "method": "subtract", "params": {"X": #X, "Y": #Y}}`
 	reqList := make([]string, 0)
 	reqList = append(reqList, r.Replace(req), `{"jsonrpc": "2.0", "method": "update"}`)
 
 	for _, el := range reqList {
-
 		var result Result
 
 		resp, err := httpPost(
@@ -1133,7 +1107,6 @@ func TestNotification(t *testing.T) {
 }
 
 func TestBatchNotifications(t *testing.T) {
-
 	var result Result
 
 	req := `[
@@ -1188,7 +1161,6 @@ func TestBatchNotifications(t *testing.T) {
 }
 
 func TestPositionalParamters(t *testing.T) {
-
 	var result Result
 
 	resp, err := httpPost(
@@ -1235,7 +1207,6 @@ func TestPositionalParamters(t *testing.T) {
 }
 
 func TestPositionalParamtersError(t *testing.T) {
-
 	var result Result
 
 	resp, err := httpPost(
@@ -1288,7 +1259,6 @@ func TestPositionalParamtersError(t *testing.T) {
 }
 
 func TestInvalidJSON(t *testing.T) {
-
 	var result Result
 
 	resp, err := httpPost(
@@ -1338,7 +1308,6 @@ func TestInvalidJSON(t *testing.T) {
 }
 
 func TestBatchInvalidJSON(t *testing.T) {
-
 	var result Result
 
 	req := `[
@@ -1393,7 +1362,6 @@ func TestBatchInvalidJSON(t *testing.T) {
 }
 
 func TestBatchEmptyArray(t *testing.T) {
-
 	var result Result
 
 	resp, err := httpPost(
@@ -1446,7 +1414,6 @@ func TestBatchEmptyArray(t *testing.T) {
 }
 
 func TestInvalidBatch(t *testing.T) {
-
 	var results []Result
 
 	resp, err := httpPost(
@@ -1477,7 +1444,6 @@ func TestInvalidBatch(t *testing.T) {
 }
 
 func TestServiceCall(t *testing.T) {
-
 	c := client.GetSocketConfig(serverSocket, serverRoute)
 
 	// testing empty name
@@ -1717,7 +1683,6 @@ func TestParametersObjectMethods(t *testing.T) {
 }
 
 func TestGetPositionalFloat64Params(t *testing.T) {
-
 	float64slice := []float64{14.4, 15.5, 17.7}
 
 	po := ParametersObject{params: []byte(`[14.4, 15.5, 17.7]`)}
@@ -1734,7 +1699,6 @@ func TestGetPositionalFloat64Params(t *testing.T) {
 }
 
 func TestGetPositionalIntParams(t *testing.T) {
-
 	int64slice := []int64{-14, 15, -17}
 	intslice := []int{-14, 15, -17}
 
@@ -1761,7 +1725,6 @@ func TestGetPositionalIntParams(t *testing.T) {
 }
 
 func TestGetPositionalUintParams(t *testing.T) {
-
 	uint64slice := []uint64{14, 15, 17}
 	uintslice := []uint{14, 15, 17}
 
@@ -1789,7 +1752,6 @@ func TestGetPositionalUintParams(t *testing.T) {
 }
 
 func TestGetPositionalStringParams(t *testing.T) {
-
 	stringslice := []string{"foo", "bar", "go"}
 
 	po := ParametersObject{params: []byte(`["foo","bar","go"]`)}
@@ -1807,7 +1769,6 @@ func TestGetPositionalStringParams(t *testing.T) {
 }
 
 func TestServiceMethods(t *testing.T) {
-
 	testService := Create("")
 
 	testService.SetSocket("testSocket")
@@ -1836,7 +1797,6 @@ func TestServiceMethods(t *testing.T) {
 }
 
 func TestValidateHTTPProtocolVersion(t *testing.T) {
-
 	req := httptest.NewRequest("", "http://www.google.com", nil)
 	req.Proto = "HTTP/2.0"
 
@@ -1852,7 +1812,6 @@ func TestValidateHTTPProtocolVersion(t *testing.T) {
 }
 
 func TestGetRealClientAddress(t *testing.T) {
-
 	req := httptest.NewRequest("", "http://www.google.com", nil)
 	req.Header.Set("X-Real-IP", "8.8.8.8")
 
@@ -1870,7 +1829,6 @@ func TestGetRealClientAddress(t *testing.T) {
 }
 
 func TestGetRealHostAddress(t *testing.T) {
-
 	req := httptest.NewRequest("", "http://www.google.com", nil)
 
 	_verifyequal(t, "www.google.com", GetRealHostAddress(req))
@@ -1881,7 +1839,6 @@ func TestGetRealHostAddress(t *testing.T) {
 }
 
 func TestResponseObjectMarshal(t *testing.T) {
-
 	r := DefaultResponseObject()
 	b := r.Marshal()
 	decoded := new(ResponseObject)
@@ -1907,7 +1864,6 @@ func TestResponseObjectMarshal(t *testing.T) {
 
 // verifies that err contains code and message
 func _verifyerr(t *testing.T, err error, code int, message string) {
-
 	if !strings.Contains(err.Error(), strconv.Itoa(code)) {
 		t.Fatalf("expecting error '%s' to have code '%d'", err, code)
 	}
@@ -1919,7 +1875,6 @@ func _verifyerr(t *testing.T, err error, code int, message string) {
 
 // verifies that err.code==code and err.message==message
 func _verifyerrobj(t *testing.T, err *ErrorObject, code int, message string) {
-
 	if err.Code != code {
 		t.Fatalf("expecting code '%d' got '%d'", code, err.Code)
 	}

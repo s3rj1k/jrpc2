@@ -26,7 +26,6 @@ func getRequestObject(method string, params json.RawMessage) *RequestObject {
 
 // Call - wraps JSON-RPC client call
 func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, error) {
-
 	var rerr, err error
 
 	// custom transport config

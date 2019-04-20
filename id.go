@@ -8,7 +8,6 @@ import (
 
 // ConvertIDtoString converts ID parameter to string, also validates ID data type.
 func ConvertIDtoString(id *json.RawMessage) (string, *ErrorObject) {
-
 	// id can be undefined (notification)
 	if id == nil {
 		return "null", nil

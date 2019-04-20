@@ -47,7 +47,7 @@ warningCode = 0
 [rule.range-val-in-closure]
 [rule.waitgroup-by-value]
 [rule.atomic]
-#[rule.empty-lines]
+[rule.empty-lines]
 [rule.call-to-gc]
 [rule.duplicated-imports]
 [rule.import-shadowing]

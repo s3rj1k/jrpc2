@@ -19,7 +19,6 @@ type ParametersObject struct {
 
 // GetID returns request ID as string data type.
 func (p ParametersObject) GetID() string {
-
 	id, err := ConvertIDtoString(p.id)
 	if err != nil {
 		return "null"
@@ -40,7 +39,6 @@ func (p ParametersObject) GetMethodName() string {
 
 // GetRemoteAddress returns remote address of request source.
 func (p ParametersObject) GetRemoteAddress() string {
-
 	if behindReverseProxyFlagFromContext(p.r.Context()) {
 		return GetClientAddressFromHeader(p.r).String()
 	}

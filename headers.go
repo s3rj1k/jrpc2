@@ -8,7 +8,6 @@ import (
 
 // GetClientAddressFromHeader attempts to acquire Real Client IP (X-Real-IP, X-Client-IP) from upstream reverse proxy.
 func GetClientAddressFromHeader(r *http.Request) net.IP {
-
 	f := func(address string) net.IP {
 		if ip := net.ParseIP(address); ip != nil {
 			return ip
@@ -34,7 +33,6 @@ func GetClientAddressFromHeader(r *http.Request) net.IP {
 
 // GetClientAddressFromRequest attempts to acquire Real Client IP from HTTP request.
 func GetClientAddressFromRequest(r *http.Request) net.IP {
-
 	// check r.RemoteAddr variable, directly exposed to network, no reverse proxy
 	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
 		return net.ParseIP(host)
@@ -45,7 +43,6 @@ func GetClientAddressFromRequest(r *http.Request) net.IP {
 
 // GetRemoteAddress returns remote address (IP) of request source.
 func GetRemoteAddress(r *http.Request) string {
-
 	if behindReverseProxyFlagFromContext(r.Context()) {
 		return GetClientAddressFromHeader(r).String()
 	}
@@ -55,7 +52,6 @@ func GetRemoteAddress(r *http.Request) string {
 
 // GetRealHostAddress attempts to acquire original HOST from upstream reverse proxy.
 func GetRealHostAddress(r *http.Request) string {
-
 	// check X-Forwarded-Host header
 	if val := r.Header.Get("X-Forwarded-Host"); val != "" {
 		return strings.TrimSpace(val)

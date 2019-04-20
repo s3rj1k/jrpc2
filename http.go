@@ -14,7 +14,6 @@ import (
 
 // WriteRespose writes JSON-RPC 2.0 response object to HTTP response writer.
 func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
-
 	// set custom response headers
 	var headers = s.headers
 
@@ -30,7 +29,6 @@ func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
 
 	// notification does not send responses to client
 	if respObj.notification {
-
 		// write response code to HTTP writer interface
 		w.WriteHeader(respObj.statusCode)
 
@@ -44,7 +42,6 @@ func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
 	// run response hook function
 	err := s.resp(respObj.r, resp)
 	if err != nil { // hook failed
-
 		// set response header to custom HTTP code from hook error
 		// or fallback to 500, (internal server error)
 		w.WriteHeader(getHTTPCodeFromHookError(err))
@@ -59,7 +56,6 @@ func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
 	// write data to HTTP writer interface
 	_, err = w.Write(resp)
 	if err != nil { // this should never happen
-
 		// set response header to 500, (internal server error)
 		w.WriteHeader(http.StatusInternalServerError)
 
@@ -70,7 +66,6 @@ func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
 
 // ServeHTTP implements needed interface for HTTP library, handles incoming RPC client requests, generates responses.
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
 	// update HTTP request with new context
 	r = s.setReqestContextEarly(r)
 
@@ -94,7 +89,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// read request body as early as possible
 	req, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-
 		// set Response status code to 400 (bad request)
 		respObj.statusCode = http.StatusBadRequest
 
@@ -115,7 +109,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// run request hook function
 	err = s.req(r, req)
 	if err != nil { // hook failed
-
 		// set response header to custom HTTP code from hook error
 		// or fallback to 500, (internal server error)
 		w.WriteHeader(getHTTPCodeFromHookError(err))
@@ -126,7 +119,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// check HTTP protocol version
 	if ok := respObj.ValidateHTTPProtocolVersion(r); !ok {
-
 		// write response to HTTP writer
 		s.WriteRespose(w, respObj)
 
@@ -136,7 +128,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// check request Method
 	if ok := respObj.ValidateHTTPRequestMethod(r); !ok {
-
 		// write response to HTTP writer
 		s.WriteRespose(w, respObj)
 
@@ -146,7 +137,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// check request headers
 	if ok := respObj.ValidateHTTPRequestHeaders(r); !ok {
-
 		// write response to HTTP writer
 		s.WriteRespose(w, respObj)
 
@@ -159,7 +149,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// decode request body
 	if err := json.Unmarshal(req, &reqObj); err != nil {
-
 		// prepare default error object
 		respObj.Error = &ErrorObject{
 			Code:    ParseErrorCode,
@@ -169,13 +158,11 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// additional error parsing
 		switch v := err.(type) {
-
 		// wrong data type data in request
 		case *json.UnmarshalTypeError:
 
 			// array data, batch request
 			if v.Value == "array" {
-
 				// define Error object
 				respObj.Error = &ErrorObject{
 					Code:    NotImplementedCode,
@@ -192,7 +179,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			// invalid data type for method
 			if v.Field == "method" { // name of the field holding the Go value
-
 				// define Error object
 				respObj.Error = &ErrorObject{
 					Code:    InvalidMethodCode,
@@ -225,7 +211,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// validate JSON-RPC 2.0 request version member
 	if ok := respObj.ValidateJSONRPCVersionNumber(reqObj.Jsonrpc); !ok {
-
 		// write response to HTTP writer
 		s.WriteRespose(w, respObj)
 
@@ -236,7 +221,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// parse ID member
 	_, errObj = ConvertIDtoString(reqObj.ID)
 	if errObj != nil {
-
 		// define Error object
 		respObj.Error = errObj
 
@@ -273,7 +257,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// invoke named method with the provided parameters
 	respObj.Result, errObj = s.Call(reqObj.Method, paramsObj)
 	if errObj != nil {
-
 		// define Error object
 		respObj.Error = errObj
 
