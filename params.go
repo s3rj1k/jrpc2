@@ -40,6 +40,7 @@ func (p ParametersObject) GetMethodName() string {
 
 // GetRemoteAddress returns remote address of request source.
 func (p ParametersObject) GetRemoteAddress() string {
+
 	if behindReverseProxyFlagFromContext(p.r.Context()) {
 		return GetClientAddressFromHeader(p.r).String()
 	}

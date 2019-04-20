@@ -43,6 +43,16 @@ func GetClientAddressFromRequest(r *http.Request) net.IP {
 	return nil
 }
 
+// GetRemoteAddress returns remote address (IP) of request source.
+func GetRemoteAddress(r *http.Request) string {
+
+	if behindReverseProxyFlagFromContext(r.Context()) {
+		return GetClientAddressFromHeader(r).String()
+	}
+
+	return GetClientAddressFromRequest(r).String()
+}
+
 // GetRealHostAddress attempts to acquire original HOST from upstream reverse proxy.
 func GetRealHostAddress(r *http.Request) string {
 
