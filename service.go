@@ -59,7 +59,10 @@ func Create(socket string) *Service {
 	}
 }
 
-// openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -subj "/C=UA/ST=Kyiv/L=Kyiv/O=Office/OU=Org/CN=localhost"
+/*
+openssl req -newkey rsa:2048 -nodes -keyout domain.key -x509 -days 365 -out domain.crt \
+  -subj "/C=UA/ST=Kyiv/L=Kyiv/O=Office/OU=Org/CN=localhost"
+*/
 
 // CreateOverTCPWithTLS defines a new service instance over TCP with TLS (HTTPS).
 func CreateOverTCPWithTLS(address, route, key, cert string) *Service {
