@@ -17,10 +17,9 @@ const (
 	ctxKeyCertificate
 	ctxKeyProxyFlag
 	ctxKeyAuthorization
-	ctxKeyNotificationFlag // nolint: deadcode,unused
-	ctxKeyHTTPStatusCode   // nolint: deadcode,unused
-	ctxKeyDynamicHeaders   // nolint: deadcode,unused
-	ctxKeyStaticHeaders    // nolint: deadcode,unused
+	ctxKeyNotificationFlag
+	ctxKeyHTTPStatusCode
+	ctxKeyHeaders
 )
 
 func contextWithBehindReverseProxyFlag(ctx context.Context, flag bool) context.Context {
@@ -140,11 +139,11 @@ func authorizationFromContext(ctx context.Context) map[string]authorization { //
 	}
 }
 
-func contextWithNotificationFlag(ctx context.Context, flag bool) context.Context { // nolint: deadcode,unused
+func contextWithNotificationFlag(ctx context.Context, flag bool) context.Context {
 	return context.WithValue(ctx, ctxKeyNotificationFlag, flag)
 }
 
-func notificationFlagFromContext(ctx context.Context) bool { // nolint: deadcode,unused
+func notificationFlagFromContext(ctx context.Context) bool {
 	switch v := ctx.Value(ctxKeyNotificationFlag).(type) {
 	case bool:
 		return v
@@ -153,11 +152,11 @@ func notificationFlagFromContext(ctx context.Context) bool { // nolint: deadcode
 	}
 }
 
-func contextWithHTTPStatusCode(ctx context.Context, code int) context.Context { // nolint: deadcode,unused
+func contextWithHTTPStatusCode(ctx context.Context, code int) context.Context {
 	return context.WithValue(ctx, ctxKeyHTTPStatusCode, code)
 }
 
-func httpStatusCodeFlagFromContext(ctx context.Context) int { // nolint: deadcode,unused
+func httpStatusCodeFlagFromContext(ctx context.Context) int {
 	switch v := ctx.Value(ctxKeyHTTPStatusCode).(type) {
 	case int:
 		return v
@@ -166,25 +165,12 @@ func httpStatusCodeFlagFromContext(ctx context.Context) int { // nolint: deadcod
 	}
 }
 
-func contextWithDynamicHeaders(ctx context.Context, headers map[string]string) context.Context { // nolint: deadcode,unused
-	return context.WithValue(ctx, ctxKeyDynamicHeaders, headers)
+func contextWithHeaders(ctx context.Context, headers map[string]string) context.Context {
+	return context.WithValue(ctx, ctxKeyHeaders, headers)
 }
 
-func dynamicHeadersFromContext(ctx context.Context) map[string]string { // nolint: deadcode,unused
-	switch v := ctx.Value(ctxKeyDynamicHeaders).(type) {
-	case map[string]string:
-		return v
-	default:
-		return nil
-	}
-}
-
-func contextWithStaticHeaders(ctx context.Context, headers map[string]string) context.Context { // nolint: deadcode,unused
-	return context.WithValue(ctx, ctxKeyStaticHeaders, headers)
-}
-
-func staticHeadersFromContext(ctx context.Context) map[string]string { // nolint: deadcode,unused
-	switch v := ctx.Value(ctxKeyStaticHeaders).(type) {
+func headersFromContext(ctx context.Context) map[string]string {
+	switch v := ctx.Value(ctxKeyHeaders).(type) {
 	case map[string]string:
 		return v
 	default:
@@ -194,6 +180,17 @@ func staticHeadersFromContext(ctx context.Context) map[string]string { // nolint
 
 func (s *Service) setReqestContextEarly(r *http.Request) *http.Request {
 	ctx := r.Context()
+
+	// set default HTTP Status Code
+	ctx = contextWithHTTPStatusCode(ctx, http.StatusOK)
+
+	// set default HTTP Header
+	ctx = contextWithHeaders(
+		ctx,
+		map[string]string{
+			"Content-Type": "application/json",
+		},
+	)
 
 	ctx = contextWithBehindReverseProxyFlag(ctx, s.behindReverseProxy)
 	ctx = contextWithUnixSocketPath(ctx, s.socket)
@@ -208,13 +205,36 @@ func (s *Service) setReqestContextEarly(r *http.Request) *http.Request {
 	return r.WithContext(ctx)
 }
 
-func (s *Service) setReqestContextLate(r *http.Request, respObj *ResponseObject) *http.Request {
+func setHTTPStatusCode(r *http.Request, status int) *http.Request {
 	ctx := r.Context()
 
-	ctx = contextWithNotificationFlag(ctx, respObj.notification)
-	ctx = contextWithHTTPStatusCode(ctx, respObj.statusCode)
-	ctx = contextWithDynamicHeaders(ctx, respObj.headers)
-	ctx = contextWithStaticHeaders(ctx, s.headers)
+	ctx = contextWithHTTPStatusCode(ctx, status)
+
+	return r.WithContext(ctx)
+}
+
+func setNotification(r *http.Request) *http.Request {
+	ctx := r.Context()
+
+	ctx = contextWithHTTPStatusCode(ctx, http.StatusNoContent)
+	ctx = contextWithNotificationFlag(ctx, true)
+
+	return r.WithContext(ctx)
+}
+
+func setResponseHeaders(r *http.Request, headers ...map[string]string) *http.Request {
+	ctx := r.Context()
+
+	var combinedHeaders = make(map[string]string)
+
+	// join all headers
+	for _, el := range headers {
+		for k, v := range el {
+			combinedHeaders[k] = v
+		}
+	}
+
+	ctx = contextWithHeaders(ctx, combinedHeaders)
 
 	return r.WithContext(ctx)
 }

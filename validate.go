@@ -17,7 +17,10 @@ func (responseObject *ResponseObject) ValidateHTTPProtocolVersion(r *http.Reques
 		}
 
 		// set Response status code to 501 (not implemented)
-		responseObject.statusCode = http.StatusNotImplemented
+		r = setHTTPStatusCode(r, http.StatusNotImplemented)
+
+		// set pointer to HTTP request object
+		responseObject.r = r
 
 		return false
 	}
@@ -36,10 +39,17 @@ func (responseObject *ResponseObject) ValidateHTTPRequestMethod(r *http.Request)
 		}
 
 		// set Response status code to 405 (method not allowed)
-		responseObject.statusCode = http.StatusMethodNotAllowed
+		r = setHTTPStatusCode(r, http.StatusMethodNotAllowed)
 
 		// set Allow header
-		responseObject.headers["Allow"] = http.MethodPost
+		r = setResponseHeaders(
+			r, map[string]string{
+				"Allow": http.MethodPost,
+			},
+		)
+
+		// set pointer to HTTP request object
+		responseObject.r = r
 
 		return false
 	}
@@ -58,7 +68,10 @@ func (responseObject *ResponseObject) ValidateHTTPRequestHeaders(r *http.Request
 		}
 
 		// set Response status code to 415 (unsupported media type)
-		responseObject.statusCode = http.StatusUnsupportedMediaType
+		r = setHTTPStatusCode(r, http.StatusUnsupportedMediaType)
+
+		// set pointer to HTTP request object
+		responseObject.r = r
 
 		return false
 	}
@@ -72,7 +85,10 @@ func (responseObject *ResponseObject) ValidateHTTPRequestHeaders(r *http.Request
 		}
 
 		// set Response status code to 406 (not acceptable)
-		responseObject.statusCode = http.StatusNotAcceptable
+		r = setHTTPStatusCode(r, http.StatusNotAcceptable)
+
+		// set pointer to HTTP request object
+		responseObject.r = r
 
 		return false
 	}
@@ -81,7 +97,7 @@ func (responseObject *ResponseObject) ValidateHTTPRequestHeaders(r *http.Request
 }
 
 // ValidateJSONRPCVersionNumber validates JSON-RPC 2.0 request version member.
-func (responseObject *ResponseObject) ValidateJSONRPCVersionNumber(version string) bool {
+func (responseObject *ResponseObject) ValidateJSONRPCVersionNumber(r *http.Request, version string) bool {
 	// validate JSON-RPC 2.0 request version member
 	if version != JSONRPCVersion {
 		responseObject.Error = &ErrorObject{
@@ -91,7 +107,10 @@ func (responseObject *ResponseObject) ValidateJSONRPCVersionNumber(version strin
 		}
 
 		// set Response status code to 400 (bad request)
-		responseObject.statusCode = http.StatusBadRequest
+		r = setHTTPStatusCode(r, http.StatusBadRequest)
+
+		// set pointer to HTTP request object
+		responseObject.r = r
 
 		return false
 	}

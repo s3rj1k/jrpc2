@@ -11,7 +11,7 @@ but has been completely rewritten.
 
 ### Client:
 client folder contains basic JSON-RPC-2.0 client implementation
-with auto-generated ID as UUIDv4 string
+with auto-generated ID as UUIDv4 string.
 
 ### Known limitations:
  - no support for batch requests

@@ -1804,7 +1804,7 @@ func TestValidateHTTPProtocolVersion(t *testing.T) {
 
 	_verifyequal(t, false, respObj.ValidateHTTPProtocolVersion(req))
 	_verifyerrobj(t, respObj.Error, InvalidRequestCode, InvalidRequestMessage)
-	_verifyequal(t, respObj.statusCode, http.StatusNotImplemented)
+	_verifyequal(t, httpStatusCodeFlagFromContext(respObj.r.Context()), http.StatusNotImplemented)
 
 	req.Proto = "HTTP/1.1"
 

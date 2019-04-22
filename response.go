@@ -17,13 +17,7 @@ type ResponseObject struct {
 	// ID contains the client established request id or null
 	ID *json.RawMessage `json:"id,omitempty"`
 
-	// fields below are intentionally unexported
-	notification bool // specifies that this response is of Notification type
-	statusCode   int  // specifies HTTP response code to be set by server
-
-	headers map[string]string // contains dynamic response headers
-
-	r *http.Request // contains pointer to HTTP request object
+	r *http.Request // contains pointer to HTTP Request object
 }
 
 // DefaultResponseObject initializes default response object.
@@ -32,14 +26,6 @@ func DefaultResponseObject() *ResponseObject {
 
 	// set JSON-RPC response version
 	respObj.Jsonrpc = JSONRPCVersion
-
-	// set default response status code
-	respObj.statusCode = http.StatusOK
-
-	// init headers map, set response Content-Type header
-	respObj.headers = map[string]string{
-		"Content-Type": "application/json",
-	}
 
 	return respObj
 }

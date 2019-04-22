@@ -18,7 +18,7 @@ func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
 	var headers = s.headers
 
 	// set dynamic response headers
-	for header, value := range respObj.headers {
+	for header, value := range headersFromContext(respObj.r.Context()) {
 		headers[header] = value
 	}
 
@@ -27,10 +27,13 @@ func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
 		w.Header().Set(header, value)
 	}
 
+	// get HTTP Status code from Request Context
+	statusCode := httpStatusCodeFlagFromContext(respObj.r.Context())
+
 	// notification does not send responses to client
-	if respObj.notification {
+	if notificationFlagFromContext(respObj.r.Context()) {
 		// write response code to HTTP writer interface
-		w.WriteHeader(respObj.statusCode)
+		w.WriteHeader(statusCode)
 
 		// end response processing
 		return
@@ -51,7 +54,7 @@ func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
 	}
 
 	// write response code to HTTP writer interface
-	w.WriteHeader(respObj.statusCode)
+	w.WriteHeader(statusCode)
 
 	// write data to HTTP writer interface
 	_, err = w.Write(resp)
@@ -90,7 +93,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		// set Response status code to 400 (bad request)
-		respObj.statusCode = http.StatusBadRequest
+		r = setHTTPStatusCode(r, http.StatusBadRequest)
+
+		// set pointer to HTTP request object
+		respObj.r = r
 
 		// define Error object
 		respObj.Error = &ErrorObject{
@@ -210,7 +216,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate JSON-RPC 2.0 request version member
-	if ok := respObj.ValidateJSONRPCVersionNumber(reqObj.Jsonrpc); !ok {
+	if ok := respObj.ValidateJSONRPCVersionNumber(r, reqObj.Jsonrpc); !ok {
 		// write response to HTTP writer
 		s.WriteRespose(w, respObj)
 
@@ -235,14 +241,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if reqObj.ID != nil {
 		respObj.ID = reqObj.ID
 	} else {
-		respObj.notification = true
-
-		// set status code for notification
-		respObj.statusCode = http.StatusNoContent
+		// set status code for notification and notification flag
+		r = setNotification(r)
 	}
 
-	// update HTTP request with new context
-	r = s.setReqestContextLate(r, respObj)
+	// set pointer to HTTP request object
+	respObj.r = r
 
 	// prepare parameters object for named method
 	paramsObj := ParametersObject{
