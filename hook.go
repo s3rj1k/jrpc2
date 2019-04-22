@@ -4,6 +4,16 @@ import (
 	"net/http"
 )
 
+// SetRequestHookFunction defines function that will be used as request hook.
+func (s *Service) SetRequestHookFunction(f func(r *http.Request, data []byte) error) {
+	s.req = f
+}
+
+// SetResponseHookFunction defines function that will be used as request hook.
+func (s *Service) SetResponseHookFunction(f func(r *http.Request, data []byte) error) {
+	s.resp = f
+}
+
 // HookError custom error for Request/Response hook.
 type HookError struct {
 	ErrorMsg string

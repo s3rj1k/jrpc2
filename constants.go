@@ -3,6 +3,9 @@ package jrpc2
 // JSONRPCVersion specifies the version of the JSON-RPC protocol.
 const JSONRPCVersion string = "2.0"
 
+// DefaultUnixSocketMode specifies default permissions for unix socket.
+const DefaultUnixSocketMode = 0777
+
 // Error codes.
 const (
 	ParseErrorCode     int = -32700

@@ -1,9 +1,7 @@
 package jrpc2
 
 import (
-	"encoding/base64"
 	"fmt"
-	"net"
 	"net/http"
 	"strings"
 )
@@ -26,9 +24,9 @@ type Service struct {
 
 	behindReverseProxy bool // flags that changes behavior of some internal methods (X-Real-IP, X-Client-IP)
 
-	methods map[string]method       // mapping of registered methods
-	headers map[string]string       // custom response headers
-	auth    map[string][]*net.IPNet // contains mapping of allowed remote network to HTTP Authorization header
+	methods map[string]method        // mapping of registered methods
+	headers map[string]string        // custom response headers
+	auth    map[string]authorization // contains mapping of allowed remote network to HTTP Authorization header
 
 	req  func(r *http.Request, data []byte) error // defines request function hook, runs just after request body is read
 	resp func(r *http.Request, data []byte) error // defines response function hook, runs just before response is written
@@ -38,7 +36,7 @@ type Service struct {
 func Create(socket string) *Service {
 	return &Service{
 		socket:     &socket,
-		socketMode: 0777,
+		socketMode: DefaultUnixSocketMode,
 
 		route: "/",
 
@@ -95,7 +93,7 @@ func CreateOverTCPWithTLS(address, route, key, cert string) *Service {
 func CreateProxy(socket string) *Service {
 	return &Service{
 		socket:     &socket,
-		socketMode: 0777,
+		socketMode: DefaultUnixSocketMode,
 
 		route: "/",
 
@@ -261,52 +259,4 @@ func (s *Service) RegisterProxy(f func(ParametersObject) (interface{}, *ErrorObj
 			},
 		}
 	}
-}
-
-// SetRequestHookFunction defines function that will be used as request hook.
-func (s *Service) SetRequestHookFunction(f func(r *http.Request, data []byte) error) {
-	s.req = f
-}
-
-// SetResponseHookFunction defines function that will be used as request hook.
-func (s *Service) SetResponseHookFunction(f func(r *http.Request, data []byte) error) {
-	s.resp = f
-}
-
-// AddAuthorizationFromNetwork adds (enables) Basic Authorization from supplyed remote network.
-// Then at least one mapping exists, Basic Authorization is enabled, default action is Deny Access.
-func (s *Service) AddAuthorizationFromNetwork(network, username, password string) error {
-	// symbol ':' is a delimiter, must not be in username or/and password
-	if strings.Contains(username, ":") {
-		return fmt.Errorf("username '%s' must not contain ':'", username)
-	}
-	if strings.Contains(password, ":") {
-		return fmt.Errorf("password '%s' must not contain ':'", password)
-	}
-
-	// parse network address
-	_, netAddr, err := net.ParseCIDR(network)
-	if err != nil {
-		return fmt.Errorf("must provide valid network address: %v", err)
-	}
-
-	// encode Username and Password
-	// see 2 (end of page 4) https://www.ietf.org/rfc/rfc2617.txt
-	auth := base64.StdEncoding.EncodeToString(
-		[]byte(username + ":" + password),
-	)
-
-	// define map for the first rule
-	if s.auth == nil {
-		s.auth = make(map[string][]*net.IPNet)
-	}
-
-	// add Authorization to Network mapping
-	if val, ok := s.auth[auth]; ok { // username/password exists, adding network
-		s.auth[auth] = append(val, netAddr)
-	} else { // no previous record
-		s.auth[auth] = []*net.IPNet{netAddr}
-	}
-
-	return nil
 }

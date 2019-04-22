@@ -2,7 +2,6 @@ package jrpc2
 
 import (
 	"context"
-	"net"
 	"net/http"
 )
 
@@ -29,7 +28,12 @@ func contextWithBehindReverseProxyFlag(ctx context.Context, flag bool) context.C
 }
 
 func behindReverseProxyFlagFromContext(ctx context.Context) bool {
-	return ctx.Value(ctxKeyIsBehindReverseProxy).(bool)
+	switch v := ctx.Value(ctxKeyIsBehindReverseProxy).(type) {
+	case bool:
+		return v
+	default:
+		return false
+	}
 }
 
 func contextWithUnixSocketPath(ctx context.Context, socket *string) context.Context {
@@ -37,7 +41,12 @@ func contextWithUnixSocketPath(ctx context.Context, socket *string) context.Cont
 }
 
 func unixSocketPathFromContext(ctx context.Context) *string { // nolint: deadcode,unused
-	return ctx.Value(ctxKeyUnixSocketPath).(*string)
+	switch v := ctx.Value(ctxKeyUnixSocketPath).(type) {
+	case *string:
+		return v
+	default:
+		return nil
+	}
 }
 
 func contextWithUnixSocketMode(ctx context.Context, mode uint32) context.Context {
@@ -45,7 +54,12 @@ func contextWithUnixSocketMode(ctx context.Context, mode uint32) context.Context
 }
 
 func unixSocketModeFromContext(ctx context.Context) uint32 { // nolint: deadcode,unused
-	return ctx.Value(ctxKeyUnixSocketMode).(uint32)
+	switch v := ctx.Value(ctxKeyUnixSocketMode).(type) {
+	case uint32:
+		return v
+	default:
+		return uint32(DefaultUnixSocketMode)
+	}
 }
 
 func contextWithNetworkAddress(ctx context.Context, address *string) context.Context {
@@ -53,7 +67,12 @@ func contextWithNetworkAddress(ctx context.Context, address *string) context.Con
 }
 
 func networkAddressFromContext(ctx context.Context) *string { // nolint: deadcode,unused
-	return ctx.Value(ctxKeyNetworkAddress).(*string)
+	switch v := ctx.Value(ctxKeyNetworkAddress).(type) {
+	case *string:
+		return v
+	default:
+		return nil
+	}
 }
 
 func contextWithRoute(ctx context.Context, route string) context.Context {
@@ -61,7 +80,12 @@ func contextWithRoute(ctx context.Context, route string) context.Context {
 }
 
 func routeFromContext(ctx context.Context) string { // nolint: deadcode,unused
-	return ctx.Value(ctxKeyRoute).(string)
+	switch v := ctx.Value(ctxKeyRoute).(type) {
+	case string:
+		return v
+	default:
+		return ""
+	}
 }
 
 func contextWithCertificateKey(ctx context.Context, key string) context.Context {
@@ -69,7 +93,12 @@ func contextWithCertificateKey(ctx context.Context, key string) context.Context 
 }
 
 func certificateKeyFromContext(ctx context.Context) string { // nolint: deadcode,unused
-	return ctx.Value(ctxKeyCertificateKey).(string)
+	switch v := ctx.Value(ctxKeyCertificateKey).(type) {
+	case string:
+		return v
+	default:
+		return ""
+	}
 }
 
 func contextWithCertificate(ctx context.Context, key string) context.Context {
@@ -77,7 +106,12 @@ func contextWithCertificate(ctx context.Context, key string) context.Context {
 }
 
 func certificateFromContext(ctx context.Context) string { // nolint: deadcode,unused
-	return ctx.Value(ctxKeyCertificate).(string)
+	switch v := ctx.Value(ctxKeyCertificate).(type) {
+	case string:
+		return v
+	default:
+		return ""
+	}
 }
 
 func contextWithProxyFlag(ctx context.Context, flag bool) context.Context {
@@ -85,15 +119,25 @@ func contextWithProxyFlag(ctx context.Context, flag bool) context.Context {
 }
 
 func proxyFlagFromContext(ctx context.Context) bool { // nolint: deadcode,unused
-	return ctx.Value(ctxKeyCertificate).(bool)
+	switch v := ctx.Value(ctxKeyProxyFlag).(type) {
+	case bool:
+		return v
+	default:
+		return false
+	}
 }
 
-func contextWithAuthorization(ctx context.Context, auth map[string][]*net.IPNet) context.Context {
+func contextWithAuthorization(ctx context.Context, auth map[string]authorization) context.Context {
 	return context.WithValue(ctx, ctxKeyAuthorization, auth)
 }
 
-func authorizationFromContext(ctx context.Context) map[string][]*net.IPNet { // nolint: deadcode,unused
-	return ctx.Value(ctxKeyAuthorization).(map[string][]*net.IPNet)
+func authorizationFromContext(ctx context.Context) map[string]authorization { // nolint: deadcode,unused
+	switch v := ctx.Value(ctxKeyAuthorization).(type) {
+	case map[string]authorization:
+		return v
+	default:
+		return nil
+	}
 }
 
 func contextWithNotificationFlag(ctx context.Context, flag bool) context.Context { // nolint: deadcode,unused
@@ -101,7 +145,12 @@ func contextWithNotificationFlag(ctx context.Context, flag bool) context.Context
 }
 
 func notificationFlagFromContext(ctx context.Context) bool { // nolint: deadcode,unused
-	return ctx.Value(ctxKeyNotificationFlag).(bool)
+	switch v := ctx.Value(ctxKeyNotificationFlag).(type) {
+	case bool:
+		return v
+	default:
+		return false
+	}
 }
 
 func contextWithHTTPStatusCode(ctx context.Context, code int) context.Context { // nolint: deadcode,unused
@@ -109,7 +158,12 @@ func contextWithHTTPStatusCode(ctx context.Context, code int) context.Context { 
 }
 
 func httpStatusCodeFlagFromContext(ctx context.Context) int { // nolint: deadcode,unused
-	return ctx.Value(ctxKeyHTTPStatusCode).(int)
+	switch v := ctx.Value(ctxKeyHTTPStatusCode).(type) {
+	case int:
+		return v
+	default:
+		return http.StatusOK
+	}
 }
 
 func contextWithDynamicHeaders(ctx context.Context, headers map[string]string) context.Context { // nolint: deadcode,unused
@@ -117,7 +171,12 @@ func contextWithDynamicHeaders(ctx context.Context, headers map[string]string) c
 }
 
 func dynamicHeadersFromContext(ctx context.Context) map[string]string { // nolint: deadcode,unused
-	return ctx.Value(ctxKeyDynamicHeaders).(map[string]string)
+	switch v := ctx.Value(ctxKeyDynamicHeaders).(type) {
+	case map[string]string:
+		return v
+	default:
+		return nil
+	}
 }
 
 func contextWithStaticHeaders(ctx context.Context, headers map[string]string) context.Context { // nolint: deadcode,unused
@@ -125,7 +184,12 @@ func contextWithStaticHeaders(ctx context.Context, headers map[string]string) co
 }
 
 func staticHeadersFromContext(ctx context.Context) map[string]string { // nolint: deadcode,unused
-	return ctx.Value(ctxKeyStaticHeaders).(map[string]string)
+	switch v := ctx.Value(ctxKeyStaticHeaders).(type) {
+	case map[string]string:
+		return v
+	default:
+		return nil
+	}
 }
 
 func (s *Service) setReqestContextEarly(r *http.Request) *http.Request {

@@ -223,7 +223,7 @@ func TestMain(m *testing.M) {
 			},
 		)
 
-		if err := authService.AddAuthorizationFromNetwork("127.0.0.1/32", username, password); err != nil {
+		if err := authService.AddAuthorization(username, password, []string{"127.0.0.1/32"}); err != nil {
 			log.Fatal(err)
 		}
 
