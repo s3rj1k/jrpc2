@@ -166,7 +166,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch v := err.(type) {
 		// wrong data type data in request
 		case *json.UnmarshalTypeError:
-
 			// array data, batch request
 			if v.Value == "array" {
 				// define Error object
@@ -206,7 +205,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 
 		default: // other error
-
 			// write response to HTTP writer
 			s.WriteRespose(w, respObj)
 

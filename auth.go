@@ -28,7 +28,7 @@ func isRemoteNetworkAllowed(networks []*net.IPNet, remoteIP net.IP) bool {
 	}
 
 	// empty network
-	if networks == nil {
+	if len(networks) == 0 {
 		return false
 	}
 
@@ -141,7 +141,7 @@ func (s *Service) AddAuthorization(username, password string, networks []string)
 
 	// fail if user was already in map
 	if _, ok := s.auth[username]; ok {
-		return fmt.Errorf("user '%s' already added to authorization mapping", username)
+		return fmt.Errorf("username '%s' already added to authorization mapping", username)
 	}
 
 	// define map for the first rule
@@ -164,37 +164,37 @@ func (s *Service) AddAuthorization(username, password string, networks []string)
 // Сolon ':' is used as a delimiter, must not be in username or/and password.
 // To generate hashed password record use (CPU intensive, use cost below 10): htpasswd -nbB username password
 func (s *Service) AddAuthorizationFromFile(path string) error {
-
+	// open authorization file
 	file, err := os.Open(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open authorization file: %v", err)
 	}
 	defer file.Close()
 
+	// authorization entries
 	entries := make([]*authorization, 0)
 
+	// prepare scanner object
 	scanner := bufio.NewScanner(file)
 
+	// scan lines
 	for scanner.Scan() {
-
 		// parse and fail on error
 		auth, err := parseLine(scanner.Text())
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to parse authorization file: %v", err)
 		}
 
-		// nil might return if line is a comment
 		if auth == nil {
-			continue
+			continue // line is a comment
 		}
 
 		// fail if user was already added to authorization mapping
 		if _, ok := s.auth[auth.Username]; ok {
-			return fmt.Errorf("user '%s' already added to authorization mapping", auth.Username)
+			return fmt.Errorf("username '%s' already added to authorization mapping", auth.Username)
 		}
 
 		entries = append(entries, auth)
-
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -217,7 +217,6 @@ func (s *Service) AddAuthorizationFromFile(path string) error {
 // parseLine returns nil, nil if line is a comment (starts with #).
 // In other cases either auth or error are returned.
 func parseLine(line string) (*authorization, error) {
-
 	const errpref = "parsing error:"
 
 	line = strings.TrimSpace(line)
@@ -256,7 +255,6 @@ func parseLine(line string) (*authorization, error) {
 	}
 
 	for _, n := range networks {
-
 		n = strings.TrimSpace(n)
 
 		if n == "" {
@@ -266,7 +264,6 @@ func parseLine(line string) (*authorization, error) {
 		// parsing network
 		_, parsed, err := net.ParseCIDR(n)
 		if err != nil || parsed == nil {
-
 			// error parsing even 1 network will fail whole line parsing
 			return nil, fmt.Errorf("%s can't get network from line '%s'", errpref, line)
 		}
