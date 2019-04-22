@@ -42,17 +42,17 @@ func (s *Service) Start() error {
 	mux := http.NewServeMux()
 	mux.Handle(s.route, s)
 
-	err = http.Serve(us, mux)
-	if err != nil {
-		return err
-	}
-
 	defer func() {
-		err := us.Close()
+		err = us.Close()
 		if err != nil {
 			rerr = err
 		}
 	}()
+
+	err = http.Serve(us, mux)
+	if err != nil {
+		return err
+	}
 
 	return rerr
 }

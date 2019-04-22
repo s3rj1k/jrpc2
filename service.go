@@ -150,6 +150,10 @@ func (s *Service) SetSocket(socket string) {
 
 // GetSocket gets custom unix socket from service object.
 func (s *Service) GetSocket() string {
+	if s.socket == nil {
+		return ""
+	}
+
 	return *s.socket
 }
 
@@ -160,6 +164,10 @@ func (s *Service) SetAddress(address string) {
 
 // GetAddress gets custom network address from service object.
 func (s *Service) GetAddress() string {
+	if s.address == nil {
+		return ""
+	}
+
 	return *s.address
 }
 

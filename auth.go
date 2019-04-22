@@ -13,45 +13,45 @@ func (s *Service) CheckAuthorization(r *http.Request) error {
 
 	var remoteIP net.IP
 
-	// check Authorization then enabled
-	if s.auth != nil {
-		// get Authorization header
-		auth := r.Header.Get("Authorization")
-		if strings.TrimSpace(auth) == "" {
-			return errors.New("empty Authorization header")
-		}
+	// authorize then auth disabled
+	if s.auth == nil {
+		return nil
+	}
 
-		// extracts base64 encoded Username/Password from Authorization header
-		key := strings.TrimSpace(auth[len(prefix):])
+	// get Authorization header
+	auth := r.Header.Get("Authorization")
+	if strings.TrimSpace(auth) == "" {
+		return errors.New("empty Authorization header")
+	}
 
-		// lookup in allowed Username/Password mapping
-		networks, ok := s.auth[key]
-		if !ok || networks == nil {
-			return errors.New("not authorized")
-		}
+	// extracts base64 encoded Username/Password from Authorization header
+	key := strings.TrimSpace(auth[len(prefix):])
 
-		// get remote client IP
-		if s.behindReverseProxy {
-			remoteIP = GetClientAddressFromHeader(r)
-		} else {
-			remoteIP = GetClientAddressFromRequest(r)
-		}
-
-		// not a valid IP
-		if remoteIP == nil {
-			return errors.New("not authorized")
-		}
-
-		// check all allowed networks for Username/Password mapping
-		for _, network := range networks {
-			if network.Contains(remoteIP) {
-				return nil // allow access
-			}
-		}
-
-		// no allowed networks found
+	// lookup in allowed Username/Password mapping
+	networks, ok := s.auth[key]
+	if !ok || networks == nil {
 		return errors.New("not authorized")
 	}
 
-	return nil
+	// get remote client IP
+	if s.behindReverseProxy {
+		remoteIP = GetClientAddressFromHeader(r)
+	} else {
+		remoteIP = GetClientAddressFromRequest(r)
+	}
+
+	// not a valid IP
+	if remoteIP == nil {
+		return errors.New("not authorized")
+	}
+
+	// check all allowed networks for Username/Password mapping
+	for _, network := range networks {
+		if network.Contains(remoteIP) {
+			return nil // allow access
+		}
+	}
+
+	// no allowed networks found
+	return errors.New("not authorized")
 }
