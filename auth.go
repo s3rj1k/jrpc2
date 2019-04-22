@@ -1,10 +1,12 @@
 package jrpc2
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
@@ -102,7 +104,7 @@ func (s *Service) CheckAuthorization(r *http.Request) error {
 }
 
 // AddAuthorization adds (enables) Basic Authorization from specified remote network.
-// Then at least one mapping exists, Basic Authorization is enabled, default action is Deny Access.
+// When at least one mapping exists, Basic Authorization is enabled, default action is Deny Access.
 // Сolon ':' is used as a delimiter, must not be in username or/and password.
 // To generate hashed password record use (CPU intensive, use cost below 10): htpasswd -nbB username password
 func (s *Service) AddAuthorization(username, password string, networks []string) error {
@@ -117,13 +119,8 @@ func (s *Service) AddAuthorization(username, password string, networks []string)
 	}
 
 	// validate network input
-	if networks == nil {
+	if len(networks) == 0 {
 		return fmt.Errorf("network list must not be empty")
-	}
-
-	// define map for the first rule
-	if s.auth == nil {
-		s.auth = make(map[string]authorization)
 	}
 
 	// networks as native object
@@ -142,9 +139,14 @@ func (s *Service) AddAuthorization(username, password string, networks []string)
 		netsObj = append(netsObj, netObj)
 	}
 
-	// validate networks
-	if netsObj == nil {
-		return fmt.Errorf("no valid networks found")
+	// fail if user was already in map
+	if _, ok := s.auth[username]; ok {
+		return fmt.Errorf("user '%s' already added to authorization mapping", username)
+	}
+
+	// define map for the first rule
+	if s.auth == nil {
+		s.auth = make(map[string]authorization)
 	}
 
 	// add Authorization to Network mapping
@@ -155,4 +157,127 @@ func (s *Service) AddAuthorization(username, password string, networks []string)
 	}
 
 	return nil
+}
+
+// AddAuthorizationFromFile adds (enables) Basic Authorization from file at path.
+// When at least one mapping exists, Basic Authorization is enabled, default action is Deny Access.
+// Сolon ':' is used as a delimiter, must not be in username or/and password.
+// To generate hashed password record use (CPU intensive, use cost below 10): htpasswd -nbB username password
+func (s *Service) AddAuthorizationFromFile(path string) error {
+
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	entries := make([]*authorization, 0)
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+
+		// parse and fail on error
+		auth, err := parseLine(scanner.Text())
+		if err != nil {
+			return err
+		}
+
+		// nil might return if line is a comment
+		if auth == nil {
+			continue
+		}
+
+		// fail if user was already added to authorization mapping
+		if _, ok := s.auth[auth.Username]; ok {
+			return fmt.Errorf("user '%s' already added to authorization mapping", auth.Username)
+		}
+
+		entries = append(entries, auth)
+
+	}
+
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+
+	// define map for the first rule if entries found in file
+	if s.auth == nil && len(entries) > 0 {
+		s.auth = make(map[string]authorization)
+	}
+
+	// add Authorizations to Network mapping
+	for _, entry := range entries {
+		s.auth[entry.Username] = *entry
+	}
+
+	return nil
+}
+
+// parseLine returns nil, nil if line is a comment (starts with #).
+// In other cases either auth or error are returned.
+func parseLine(line string) (*authorization, error) {
+
+	const errpref = "parsing error:"
+
+	line = strings.TrimSpace(line)
+
+	// skip comments
+	if strings.HasPrefix(line, "#") || line == "" {
+		return nil, nil
+	}
+
+	// split line
+	splitted := strings.Split(line, ":")
+
+	// need minimum 3 entries
+	if len(splitted) < 3 {
+		return nil, fmt.Errorf("%s less than 3 items after splitting line '%s'", errpref, line)
+	}
+
+	// user and password are 1st and 2nd
+	user := splitted[0]
+	password := splitted[1]
+
+	// networks can also have ":" - getting them by trimming user and password
+	networksRaw := strings.TrimPrefix(line, fmt.Sprintf("%s:%s:", user, password))
+
+	// error during trimming
+	if networksRaw == line {
+		return nil, fmt.Errorf("%s can't to trim user:password from line '%s'", errpref, line)
+	}
+
+	// networks are expected to be splitted by coma
+	networks := strings.Split(networksRaw, ",")
+
+	out := &authorization{
+		Username: user,
+		Password: password,
+	}
+
+	for _, n := range networks {
+
+		n = strings.TrimSpace(n)
+
+		if n == "" {
+			continue
+		}
+
+		// parsing network
+		_, parsed, err := net.ParseCIDR(n)
+		if err != nil || parsed == nil {
+
+			// error parsing even 1 network will fail whole line parsing
+			return nil, fmt.Errorf("%s can't get network from line '%s'", errpref, line)
+		}
+
+		out.Networks = append(out.Networks, parsed)
+	}
+
+	// at least 1 network must be present
+	if len(out.Networks) == 0 {
+		return nil, fmt.Errorf("%s no networks found on line '%s'", errpref, line)
+	}
+
+	return out, nil
 }
