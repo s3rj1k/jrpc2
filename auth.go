@@ -110,13 +110,13 @@ func (s *Service) CheckAuthorization(r *http.Request) error {
 // To generate hashed password record use (CPU intensive, use cost below 10): htpasswd -nbB username password
 func (s *Service) AddAuthorization(username, password string, networks []string) error {
 	// validate username input
-	if strings.Contains(username, ":") {
-		return fmt.Errorf("username '%s' must not contain ':'", username)
+	if strings.Contains(username, ":") || len(username) == 0 {
+		return fmt.Errorf("username '%s' must not contain ':' or be empty", username)
 	}
 
 	// validate password input
-	if strings.Contains(password, ":") {
-		return fmt.Errorf("password '%s' must not contain ':'", password)
+	if strings.Contains(password, ":") || len(password) == 0 {
+		return fmt.Errorf("password '%s' must not contain ':' or be empty", password)
 	}
 
 	// validate network input
@@ -229,6 +229,16 @@ func parseLine(line string) (*authorization, error) {
 	// user and password are 1st and 2nd
 	user := splitted[0]
 	password := splitted[1]
+
+	// validate username input
+	if strings.Contains(user, ":") || len(user) == 0 {
+		return nil, fmt.Errorf("username '%s' must not contain ':' or be empty", user)
+	}
+
+	// validate password input
+	if strings.Contains(password, ":") || len(password) == 0 {
+		return nil, fmt.Errorf("password '%s' must not contain ':' or be empty", password)
+	}
 
 	// networks can also have ":" - getting them by trimming user and password
 	networksRaw := strings.TrimPrefix(line, fmt.Sprintf("%s:%s:", user, password))
