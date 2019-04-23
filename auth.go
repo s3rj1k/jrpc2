@@ -105,6 +105,7 @@ func (s *Service) CheckAuthorization(r *http.Request) error {
 
 // AddAuthorization adds (enables) Basic Authorization from specified remote network.
 // When at least one mapping exists, Basic Authorization is enabled, default action is Deny Access.
+// Method call with username that already exists in mapping will overwrite existing entry.
 // Сolon ':' is used as a delimiter, must not be in username or/and password.
 // To generate hashed password record use (CPU intensive, use cost below 10): htpasswd -nbB username password
 func (s *Service) AddAuthorization(username, password string, networks []string) error {
@@ -139,11 +140,6 @@ func (s *Service) AddAuthorization(username, password string, networks []string)
 		netsObj = append(netsObj, netObj)
 	}
 
-	// fail if user was already in map
-	if _, ok := s.auth[username]; ok {
-		return fmt.Errorf("username '%s' already added to authorization mapping", username)
-	}
-
 	// define map for the first rule
 	if s.auth == nil {
 		s.auth = make(map[string]authorization)
@@ -161,6 +157,7 @@ func (s *Service) AddAuthorization(username, password string, networks []string)
 
 // AddAuthorizationFromFile adds (enables) Basic Authorization from file at path.
 // When at least one mapping exists, Basic Authorization is enabled, default action is Deny Access.
+// Duplicate users in the file will not raise error - the latest entry will be added to the mapping.
 // Сolon ':' is used as a delimiter, must not be in username or/and password.
 // To generate hashed password record use (CPU intensive, use cost below 10): htpasswd -nbB username password
 func (s *Service) AddAuthorizationFromFile(path string) error {
@@ -187,11 +184,6 @@ func (s *Service) AddAuthorizationFromFile(path string) error {
 
 		if auth == nil {
 			continue // line is a comment
-		}
-
-		// fail if user was already added to authorization mapping
-		if _, ok := s.auth[auth.Username]; ok {
-			return fmt.Errorf("username '%s' already added to authorization mapping", auth.Username)
 		}
 
 		entries = append(entries, auth)
