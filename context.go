@@ -27,6 +27,10 @@ func contextWithBehindReverseProxyFlag(ctx context.Context, flag bool) context.C
 }
 
 func behindReverseProxyFlagFromContext(ctx context.Context) bool {
+	if ctx == nil {
+		return false
+	}
+
 	switch v := ctx.Value(ctxKeyIsBehindReverseProxy).(type) {
 	case bool:
 		return v
@@ -40,6 +44,10 @@ func contextWithUnixSocketPath(ctx context.Context, socket *string) context.Cont
 }
 
 func unixSocketPathFromContext(ctx context.Context) *string { // nolint: deadcode,unused
+	if ctx == nil {
+		return nil
+	}
+
 	switch v := ctx.Value(ctxKeyUnixSocketPath).(type) {
 	case *string:
 		return v
@@ -53,6 +61,10 @@ func contextWithUnixSocketMode(ctx context.Context, mode uint32) context.Context
 }
 
 func unixSocketModeFromContext(ctx context.Context) uint32 { // nolint: deadcode,unused
+	if ctx == nil {
+		return uint32(DefaultUnixSocketMode)
+	}
+
 	switch v := ctx.Value(ctxKeyUnixSocketMode).(type) {
 	case uint32:
 		return v
@@ -66,6 +78,10 @@ func contextWithNetworkAddress(ctx context.Context, address *string) context.Con
 }
 
 func networkAddressFromContext(ctx context.Context) *string { // nolint: deadcode,unused
+	if ctx == nil {
+		return nil
+	}
+
 	switch v := ctx.Value(ctxKeyNetworkAddress).(type) {
 	case *string:
 		return v
@@ -79,6 +95,10 @@ func contextWithRoute(ctx context.Context, route string) context.Context {
 }
 
 func routeFromContext(ctx context.Context) string { // nolint: deadcode,unused
+	if ctx == nil {
+		return ""
+	}
+
 	switch v := ctx.Value(ctxKeyRoute).(type) {
 	case string:
 		return v
@@ -92,6 +112,10 @@ func contextWithCertificateKey(ctx context.Context, key string) context.Context 
 }
 
 func certificateKeyFromContext(ctx context.Context) string { // nolint: deadcode,unused
+	if ctx == nil {
+		return ""
+	}
+
 	switch v := ctx.Value(ctxKeyCertificateKey).(type) {
 	case string:
 		return v
@@ -105,6 +129,10 @@ func contextWithCertificate(ctx context.Context, key string) context.Context {
 }
 
 func certificateFromContext(ctx context.Context) string { // nolint: deadcode,unused
+	if ctx == nil {
+		return ""
+	}
+
 	switch v := ctx.Value(ctxKeyCertificate).(type) {
 	case string:
 		return v
@@ -118,6 +146,10 @@ func contextWithProxyFlag(ctx context.Context, flag bool) context.Context {
 }
 
 func proxyFlagFromContext(ctx context.Context) bool { // nolint: deadcode,unused
+	if ctx == nil {
+		return false
+	}
+
 	switch v := ctx.Value(ctxKeyProxyFlag).(type) {
 	case bool:
 		return v
@@ -131,6 +163,10 @@ func contextWithAuthorization(ctx context.Context, auth map[string]authorization
 }
 
 func authorizationFromContext(ctx context.Context) map[string]authorization { // nolint: deadcode,unused
+	if ctx == nil {
+		return nil
+	}
+
 	switch v := ctx.Value(ctxKeyAuthorization).(type) {
 	case map[string]authorization:
 		return v
@@ -144,6 +180,10 @@ func contextWithNotificationFlag(ctx context.Context, flag bool) context.Context
 }
 
 func notificationFlagFromContext(ctx context.Context) bool {
+	if ctx == nil {
+		return false
+	}
+
 	switch v := ctx.Value(ctxKeyNotificationFlag).(type) {
 	case bool:
 		return v
@@ -157,6 +197,10 @@ func contextWithHTTPStatusCode(ctx context.Context, code int) context.Context {
 }
 
 func httpStatusCodeFlagFromContext(ctx context.Context) int {
+	if ctx == nil {
+		return http.StatusOK
+	}
+
 	switch v := ctx.Value(ctxKeyHTTPStatusCode).(type) {
 	case int:
 		return v
@@ -170,6 +214,10 @@ func contextWithHeaders(ctx context.Context, headers map[string]string) context.
 }
 
 func headersFromContext(ctx context.Context) map[string]string {
+	if ctx == nil {
+		return nil
+	}
+
 	switch v := ctx.Value(ctxKeyHeaders).(type) {
 	case map[string]string:
 		return v
