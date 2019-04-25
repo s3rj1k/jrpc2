@@ -71,7 +71,7 @@ func TestParametersObjectMethods(t *testing.T) {
 	}
 
 	if params.GetContentLength() != int64(len(td["body"])) {
-		t.Fatalf("expecting Content Lenght %d got %d", len(td["body"]), params.GetContentLength())
+		t.Fatalf("expecting Content Length %d got %d", len(td["body"]), params.GetContentLength())
 	}
 
 	if params.GetHost() != strings.TrimPrefix(td["URI"], "http://") {
@@ -185,9 +185,9 @@ func TestGetPositionalStringParams(t *testing.T) {
 func TestServiceMethods(t *testing.T) {
 	testService := Create("")
 
-	testService.SetBehidReverseProxyFlag(true)
+	testService.SetBehindReverseProxyFlag(true)
 	_verifyequal(t, testService.GetBehidReverseProxyFlag(), true)
-	testService.SetBehidReverseProxyFlag(false)
+	testService.SetBehindReverseProxyFlag(false)
 	_verifyequal(t, testService.GetBehidReverseProxyFlag(), false)
 
 	testService.SetSocket("testSocket")

@@ -178,7 +178,7 @@ func headersFromContext(ctx context.Context) map[string]string {
 	}
 }
 
-func (s *Service) setReqestContextEarly(r *http.Request) *http.Request {
+func (s *Service) setRequestContextEarly(r *http.Request) *http.Request {
 	ctx := r.Context()
 
 	// set default HTTP Status Code

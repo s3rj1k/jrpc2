@@ -70,7 +70,7 @@ func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
 // ServeHTTP implements needed interface for HTTP library, handles incoming RPC client requests, generates responses.
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// update HTTP request with new context
-	r = s.setReqestContextEarly(r)
+	r = s.setRequestContextEarly(r)
 
 	// check Basic Authorization
 	if err := s.CheckAuthorization(r); err != nil {

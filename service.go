@@ -199,13 +199,13 @@ func (s *Service) GetRoute() string {
 	return s.route
 }
 
-// SetBehidReverseProxyFlag sets behid reverse proxy flag in service object.
-func (s *Service) SetBehidReverseProxyFlag(flag bool) {
+// SetBehindReverseProxyFlag sets behind reverse proxy flag in service object.
+func (s *Service) SetBehindReverseProxyFlag(flag bool) {
 	s.behindReverseProxy = flag
 }
 
-// GetBehidReverseProxyFlag gets behid reverse proxy flag from service object.
-func (s *Service) GetBehidReverseProxyFlag() bool {
+// GetBehindReverseProxyFlag gets behind reverse proxy flag from service object.
+func (s *Service) GetBehindReverseProxyFlag() bool {
 	return s.behindReverseProxy
 }
 
