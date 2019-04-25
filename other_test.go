@@ -2,6 +2,7 @@ package jrpc2
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -71,7 +72,7 @@ func TestParametersObjectMethods(t *testing.T) {
 	}
 
 	if params.GetContentLength() != int64(len(td["body"])) {
-		t.Fatalf("expecting Content Lenght %d got %d", len(td["body"]), params.GetContentLength())
+		t.Fatalf("expecting Content Length %d got %d", len(td["body"]), params.GetContentLength())
 	}
 
 	if params.GetHost() != strings.TrimPrefix(td["URI"], "http://") {
@@ -185,10 +186,10 @@ func TestGetPositionalStringParams(t *testing.T) {
 func TestServiceMethods(t *testing.T) {
 	testService := Create("")
 
-	testService.SetBehidReverseProxyFlag(true)
-	_verifyequal(t, testService.GetBehidReverseProxyFlag(), true)
-	testService.SetBehidReverseProxyFlag(false)
-	_verifyequal(t, testService.GetBehidReverseProxyFlag(), false)
+	testService.SetBehindReverseProxyFlag(true)
+	_verifyequal(t, testService.GetBehindReverseProxyFlag(), true)
+	testService.SetBehindReverseProxyFlag(false)
+	_verifyequal(t, testService.GetBehindReverseProxyFlag(), false)
 
 	testService.SetSocket("testSocket")
 	_verifyequal(t, testService.GetSocket(), "testSocket")
@@ -673,6 +674,155 @@ func TestTCPStart(t *testing.T) {
 
 	err = testService.StartTCPTLS()
 	_verifyequal(t, err == nil, false) // expecting error
+}
+
+func TestContextWithBehindReverseProxyFlag(t *testing.T) {
+	ctx := context.Background()
+
+	flag := behindReverseProxyFlagFromContext(ctx)
+	_verifyequal(t, flag, false)
+
+	ctx = contextWithBehindReverseProxyFlag(ctx, true)
+	flag = behindReverseProxyFlagFromContext(ctx)
+	_verifyequal(t, flag, true)
+}
+
+func TestContextWithUnixSocketPath(t *testing.T) {
+	ctx := context.Background()
+
+	socketPath := unixSocketPathFromContext(ctx)
+	_verifyequal(t, socketPath, (*string)(nil))
+
+	sock := "/tmp/socket"
+	ctx = contextWithUnixSocketPath(ctx, &sock)
+	socketPath = unixSocketPathFromContext(ctx)
+	_verifyequal(t, *socketPath, sock)
+}
+
+func TestContextWithUnixSocketMode(t *testing.T) {
+	ctx := context.Background()
+
+	socketMode := unixSocketModeFromContext(ctx)
+	_verifyequal(t, socketMode, uint32(DefaultUnixSocketMode))
+
+	sock := uint32(0764)
+	ctx = contextWithUnixSocketMode(ctx, sock)
+	socketMode = unixSocketModeFromContext(ctx)
+	_verifyequal(t, socketMode, sock)
+}
+
+func TestContextWithNetworkAddress(t *testing.T) {
+	ctx := context.Background()
+
+	addr := networkAddressFromContext(ctx)
+	_verifyequal(t, addr, (*string)(nil))
+
+	newAddr := ":8080"
+	ctx = contextWithNetworkAddress(ctx, &newAddr)
+	addr = networkAddressFromContext(ctx)
+	_verifyequal(t, *addr, newAddr)
+}
+
+func TestContextWithRoute(t *testing.T) {
+	ctx := context.Background()
+
+	route := routeFromContext(ctx)
+	_verifyequal(t, route, "")
+
+	newRoute := "/search"
+	ctx = contextWithRoute(ctx, newRoute)
+	route = routeFromContext(ctx)
+	_verifyequal(t, route, newRoute)
+}
+
+func TestContextWithCertificateKey(t *testing.T) {
+	ctx := context.Background()
+
+	certKey := certificateKeyFromContext(ctx)
+	_verifyequal(t, certKey, "")
+
+	newCertKey := "key"
+	ctx = contextWithCertificateKey(ctx, newCertKey)
+	certKey = certificateKeyFromContext(ctx)
+	_verifyequal(t, certKey, newCertKey)
+}
+
+func TestСontextWithCertificate(t *testing.T) {
+	ctx := context.Background()
+
+	cert := certificateFromContext(ctx)
+	_verifyequal(t, cert, "")
+
+	newCert := "cert"
+	ctx = contextWithCertificate(ctx, newCert)
+	cert = certificateFromContext(ctx)
+	_verifyequal(t, cert, newCert)
+}
+
+func TestСontextWithProxyFlag(t *testing.T) {
+	ctx := context.Background()
+
+	flag := proxyFlagFromContext(ctx)
+	_verifyequal(t, flag, false)
+
+	ctx = contextWithProxyFlag(ctx, true)
+	flag = proxyFlagFromContext(ctx)
+	_verifyequal(t, flag, true)
+}
+
+func TestСontextWithAuthorization(t *testing.T) {
+	ctx := context.Background()
+	var newAuth map[string]authorization
+
+	auth := authorizationFromContext(ctx)
+	_verifyequal(t, auth, newAuth)
+
+	newAuth = map[string]authorization{
+		"bob": authorization{},
+	}
+
+	ctx = contextWithAuthorization(ctx, newAuth)
+	auth = authorizationFromContext(ctx)
+	_verifyequal(t, auth, newAuth)
+}
+
+func TestСontextWithNotificationFlag(t *testing.T) {
+	ctx := context.Background()
+
+	flag := notificationFlagFromContext(ctx)
+	_verifyequal(t, flag, false)
+
+	ctx = contextWithNotificationFlag(ctx, true)
+	flag = notificationFlagFromContext(ctx)
+	_verifyequal(t, flag, true)
+}
+
+func TestСontextWithHTTPStatusCode(t *testing.T) {
+	ctx := context.Background()
+
+	code := httpStatusCodeFlagFromContext(ctx)
+	_verifyequal(t, code, http.StatusOK)
+
+	newCode := http.StatusConflict
+	ctx = contextWithHTTPStatusCode(ctx, newCode)
+	code = httpStatusCodeFlagFromContext(ctx)
+	_verifyequal(t, code, newCode)
+}
+
+func TestСontextWithHeaders(t *testing.T) {
+	ctx := context.Background()
+	var newHeaders map[string]string
+
+	headers := headersFromContext(ctx)
+	_verifyequal(t, headers, newHeaders)
+
+	newHeaders = map[string]string{
+		"Test-Header": "Batista",
+	}
+
+	ctx = contextWithHeaders(ctx, newHeaders)
+	headers = headersFromContext(ctx)
+	_verifyequal(t, headers, newHeaders)
 }
 
 // verifies that err contains code and message
