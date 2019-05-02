@@ -74,19 +74,9 @@ func (s *Service) CheckAuthorization(r *http.Request) error {
 		return errors.New("not authorized")
 	}
 
-	// check for bcrypt (golang native) encoded password
-	if strings.HasPrefix(password, "$2a$") {
-		if err := bcrypt.CompareHashAndPassword([]byte(auth.Password), []byte(password)); err != nil {
-			return errors.New("not authorized")
-		}
-
-		return nil
-	}
-
-	// check for bcrypt (apache2 native) encoded password
-	if strings.HasPrefix(password, "$2y$") {
-		password = "$2a$" + strings.TrimPrefix(password, "$2y$")
-
+	// check for bcrypt encoded password
+	if strings.HasPrefix(auth.Password, "$2a$") ||
+		strings.HasPrefix(auth.Password, "$2y$") {
 		if err := bcrypt.CompareHashAndPassword([]byte(auth.Password), []byte(password)); err != nil {
 			return errors.New("not authorized")
 		}

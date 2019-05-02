@@ -5,8 +5,7 @@ go 1.12
 replace github.com/s3rj1k/jrpc2/client => ./client
 
 require (
-	github.com/s3rj1k/jrpc2/client v1.0.10
-	golang.org/x/crypto v0.0.0-20190418165655-df01cb2cc480
-	golang.org/x/net v0.0.0-20190420063019-afa5a82059c6 // indirect
-	golang.org/x/sys v0.0.0-20190419153524-e8e3143a4f4a // indirect
+	github.com/s3rj1k/jrpc2/client v1.0.12
+	golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734
+	golang.org/x/net v0.0.0-20190501004415-9ce7a6920f09 // indirect
 )

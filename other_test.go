@@ -778,7 +778,7 @@ func TestСontextWithAuthorization(t *testing.T) {
 	_verifyequal(t, auth, newAuth)
 
 	newAuth = map[string]authorization{
-		"bob": authorization{},
+		"bob": {},
 	}
 
 	ctx = contextWithAuthorization(ctx, newAuth)
