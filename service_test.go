@@ -1596,3 +1596,76 @@ func TestReqHookFailedCustomError(t *testing.T) {
 
 	_verifyequal(t, resp.StatusCode, http.StatusUnavailableForLegalReasons)
 }
+
+func TestCheckAuthorization(t *testing.T) {
+
+	authService.AddAuthorization("bcrypt_user", "$2y$04$T.2vn95mCL.tE6Muq1/zsOwI4v9KYYcifAU8wTz4CqWtljsG7RmLW", []string{"127.0.0.1/32"}) // bcrypt_password
+
+	// error expected: no auth header
+	resp, err := httpPost(
+		authURL,
+		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
+		authSocket,
+		postHeaders,
+	)
+	if err != nil || resp.StatusCode != 403 {
+		t.Errorf("expecting Status 403 (got %d) forbidden and no errors (got %v)", resp.StatusCode, err)
+	}
+
+	newHeaders := map[string]string{
+		"Accept":        "application/json",                           // set Accept header
+		"Content-Type":  "application/json",                           // set Content-Type header
+		"X-Real-IP":     "127.0.0.1",                                  // set X-Real-IP (upstream reverse proxy)
+		"Authorization": "Basic YmNyeXB0X3VzZXI6YmNyeXB0X3Bhc3N3b3Jk", // bcrypt_user:bcrypt_password
+	}
+
+	// no errors expected
+	resp, err = httpPost(
+		authURL,
+		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
+		authSocket,
+		newHeaders,
+	)
+	if err != nil || resp.StatusCode != 200 {
+		t.Errorf("expecting Status 200 (got %d) forbidden and no errors (got %v)", resp.StatusCode, err)
+	}
+
+	// setting up error: bad IP header
+	newHeaders["X-Real-IP"] = "8.8.8.8"
+	resp, err = httpPost(
+		authURL,
+		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
+		authSocket,
+		newHeaders,
+	)
+	if err != nil || resp.StatusCode != 403 {
+		t.Errorf("expecting Status 403 (got %d) forbidden and no errors (got %v)", resp.StatusCode, err)
+	}
+	// recover
+	newHeaders["X-Real-IP"] = "127.0.0.1"
+
+	// setting up error: bad auth header password (bcrypted)
+	newHeaders["Authorization"] = "Basic YmNyeXB0X3VzZXI6YmFkX3Bhc3N3b3Jk"
+	resp, err = httpPost(
+		authURL,
+		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
+		authSocket,
+		newHeaders,
+	)
+	if err != nil || resp.StatusCode != 403 {
+		t.Errorf("expecting Status 403 (got %d) forbidden and no errors (got %v)", resp.StatusCode, err)
+	}
+
+	// setting up error: new password (plain text), old auth header - bcrypted
+	authService.AddAuthorization("bcrypt_user", "plain_text", []string{"127.0.0.1/32"})
+	resp, err = httpPost(
+		authURL,
+		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
+		authSocket,
+		newHeaders,
+	)
+	if err != nil || resp.StatusCode != 403 {
+		t.Errorf("expecting Status 403 (got %d) forbidden and no errors (got %v)", resp.StatusCode, err)
+	}
+
+}
