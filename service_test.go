@@ -328,11 +328,17 @@ func TestClientLibrary(t *testing.T) {
 		t.Fatal("expected result to be '42'")
 	}
 
-	rawMsg, err = c.Call("subtract", []byte("{\"X\": 999.0, \"Y\": 999.0}"))
+	_, err = c.Call("subtract", []byte("{\"X\": 999.0, \"Y\": 999.0}"))
 	if err == nil {
 		t.Fatal(err)
 	}
-	if string(rawMsg) != "\"mock server error\"" {
+
+	errObj, ok := err.(*client.ErrorObject)
+	if !ok {
+		t.Fatal("expected error type to be \"*client.ErrorObject\"")
+	}
+
+	if string(errObj.Data) != "\"mock server error\"" {
 		t.Fatal("expected result to be \"mock server error\"")
 	}
 }
@@ -1598,8 +1604,10 @@ func TestReqHookFailedCustomError(t *testing.T) {
 }
 
 func TestCheckAuthorization(t *testing.T) {
-
-	authService.AddAuthorization("bcrypt_user", "$2y$04$T.2vn95mCL.tE6Muq1/zsOwI4v9KYYcifAU8wTz4CqWtljsG7RmLW", []string{"127.0.0.1/32"}) // bcrypt_password
+	err := authService.AddAuthorization("bcrypt_user", "$2y$04$T.2vn95mCL.tE6Muq1/zsOwI4v9KYYcifAU8wTz4CqWtljsG7RmLW", []string{"127.0.0.1/32"}) // bcrypt_password
+	if err != nil {
+		t.Fatalf("unexpected error '%s'", err)
+	}
 
 	// error expected: no auth header
 	resp, err := httpPost(
@@ -1657,7 +1665,11 @@ func TestCheckAuthorization(t *testing.T) {
 	}
 
 	// setting up error: new password (plain text), old auth header - bcrypted
-	authService.AddAuthorization("bcrypt_user", "plain_text", []string{"127.0.0.1/32"})
+	err = authService.AddAuthorization("bcrypt_user", "plain_text", []string{"127.0.0.1/32"})
+	if err != nil {
+		t.Fatalf("unexpected error '%s'", err)
+	}
+
 	resp, err = httpPost(
 		authURL,
 		`{"jsonrpc": "2.0", "method": "update", "id": "ID:42"}`,
@@ -1667,5 +1679,4 @@ func TestCheckAuthorization(t *testing.T) {
 	if err != nil || resp.StatusCode != 403 {
 		t.Errorf("expecting Status 403 (got %d) forbidden and no errors (got %v)", resp.StatusCode, err)
 	}
-
 }

@@ -135,7 +135,7 @@ func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, e
 
 	// check response error
 	if respObj.Error != nil {
-		return respObj.Error.Data, fmt.Errorf("JSON-RPC error: server responded with error: Code=%d, %s", respObj.Error.Code, respObj.Error.Message)
+		return nil, respObj.Error
 	}
 
 	// return response result and function-global error

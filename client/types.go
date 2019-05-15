@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -56,4 +57,12 @@ type ErrorObject struct {
 	Message string `json:"message"`
 	// Data can contain additional information about the error
 	Data json.RawMessage `json:"data,omitempty"`
+}
+
+func (errObj *ErrorObject) Error() string {
+	return fmt.Sprintf(
+		"JSON-RPC error: server responded with error: Code=%d, %s",
+		errObj.Code,
+		errObj.Message,
+	)
 }
