@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// GetConfig - returns default JSON-RPC Call config
+// GetConfig returns default JSON-RPC Call config.
 func GetConfig(url string) *Config {
 	c := new(Config)
 
@@ -26,7 +26,7 @@ func GetConfig(url string) *Config {
 	return c
 }
 
-// GetSocketConfig - returns default JSON-RPC Call config using Unix-Socket
+// GetSocketConfig returns default JSON-RPC Call config using Unix-Socket.
 func GetSocketConfig(socket, endpoint string) *Config {
 	c := new(Config)
 
@@ -47,29 +47,29 @@ func GetSocketConfig(socket, endpoint string) *Config {
 	return c
 }
 
-// SetHeader - sets custom request header.
+// SetHeader sets custom request header.
 func (c *Config) SetHeader(key, value string) {
 	c.headers[key] = value
 }
 
-// SetBasicAuth - add Basic Authorization header to client requests.
+// SetBasicAuth adds Basic Authorization header to client requests.
 func (c *Config) SetBasicAuth(username, password string) {
 	c.headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString(
 		[]byte(username+":"+password),
 	)
 }
 
-// SetTimeout - sets request timeout time in seconds.
+// SetTimeout sets request timeout time in seconds.
 func (c *Config) SetTimeout(t int64) {
 	c.timeout = time.Duration(t) * time.Second
 }
 
-// DisableCompression - disable compression inside HTTP request.
+// DisableCompression disables compression inside HTTP request.
 func (c *Config) DisableCompression(t bool) {
 	c.disableCompression = t
 }
 
-// SkipSSLCertificateCheck - disable server's certificate chain and host name check, INSECURE!.
+// SkipSSLCertificateCheck disables server's certificate chain and host name check, INSECURE!.
 func (c *Config) SkipSSLCertificateCheck(t bool) {
 	c.insecureSkipVerify = t
 }
