@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -14,7 +13,7 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
-// getRequestObject - JSON-RPC request object
+// getRequestObject creates JSON-RPC request object.
 func getRequestObject(method string, params json.RawMessage) *RequestObject {
 	return &RequestObject{
 		Jsonrpc: "2.0",
@@ -24,7 +23,7 @@ func getRequestObject(method string, params json.RawMessage) *RequestObject {
 	}
 }
 
-// Call - wraps JSON-RPC client call
+// Call wraps JSON-RPC client call.
 func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, error) {
 	var rerr, err error
 
@@ -54,7 +53,7 @@ func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, e
 	// convert request object to bytes
 	reqData, err := json.Marshal(reqObj)
 	if err != nil {
-		return nil, fmt.Errorf("JSON-RPC error: %s", err.Error())
+		return nil, NewInternalError(ErrorPrefix, err)
 	}
 
 	// prepare request data buffer
@@ -63,7 +62,7 @@ func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, e
 	// set request type to POST
 	req, err := http.NewRequest("POST", c.uri, buf)
 	if err != nil {
-		return nil, fmt.Errorf("JSON-RPC error: %s", err.Error())
+		return nil, NewInternalError(ErrorPrefix, err)
 	}
 
 	// setting specified headers
@@ -92,26 +91,26 @@ func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, e
 	// send request
 	resp, err = ctxhttp.Do(ctx, client, req)
 	if err != nil {
-		return nil, fmt.Errorf("JSON-RPC error: %s", err.Error())
+		return nil, NewInternalError(ErrorPrefix, err)
 	}
 
 	// close response body
 	defer func(resp *http.Response) {
 		err = resp.Body.Close()
 		if err != nil {
-			rerr = fmt.Errorf("JSON-RPC error: %s", err.Error())
+			rerr = NewInternalError(ErrorPrefix, err)
 		}
 	}(resp)
 
 	// fail when HTTP status code is different from 200
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("JSON-RPC error: HTTP status code must be %d, status code returned from server is %d", http.StatusOK, resp.StatusCode)
+		return nil, NewInternalError(ErrorPrefix, nil).SetHTTPStatusCodes(resp.StatusCode, http.StatusOK)
 	}
 
 	// read response raw bytes data
 	respData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("JSON-RPC error: %s", err.Error())
+		return nil, NewInternalError(ErrorPrefix, err)
 	}
 
 	// prepare response object
@@ -120,17 +119,17 @@ func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, e
 	// convert response data to object
 	err = json.Unmarshal(respData, respObj)
 	if err != nil {
-		return nil, fmt.Errorf("JSON-RPC error: %s", err.Error())
+		return nil, NewInternalError(ErrorPrefix, err)
 	}
 
 	// validate request/response IDs
 	if !strings.EqualFold(reqObj.ID, respObj.ID) {
-		return nil, fmt.Errorf("JSON-RPC error: request ID=%s does not equal response ID=%s", reqObj.ID, respObj.ID)
+		return nil, NewInternalError(ErrorPrefix, nil).SetRPCIDs(respObj.ID, reqObj.ID)
 	}
 
 	// validate request/response Jsonrpc protocol versions
 	if !strings.EqualFold(reqObj.Jsonrpc, respObj.Jsonrpc) {
-		return nil, fmt.Errorf("JSON-RPC error: request protocol version '%s' does not equal response protocol version '%s'", reqObj.Jsonrpc, respObj.Jsonrpc)
+		return nil, NewInternalError(ErrorPrefix, nil).SetProtocolVersions(respObj.Jsonrpc, reqObj.Jsonrpc)
 	}
 
 	// check response error
