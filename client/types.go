@@ -3,6 +3,7 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 )
@@ -27,6 +28,9 @@ type Config struct {
 	disableCompression bool
 	// Ignore invalid HTTPS certificates
 	insecureSkipVerify bool
+
+	// Custom HTTP client config
+	httpClient *http.Client
 }
 
 // RequestObject represents a request object.

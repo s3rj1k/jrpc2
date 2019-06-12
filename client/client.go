@@ -3,10 +3,8 @@ package client
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"strings"
 
@@ -26,26 +24,6 @@ func getRequestObject(method string, params json.RawMessage) *RequestObject {
 // Call wraps JSON-RPC client call.
 func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, error) {
 	var rerr, err error
-
-	// custom transport config
-	tr := &http.Transport{
-		DisableCompression: c.disableCompression,
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: c.insecureSkipVerify, // nolint: gosec
-		},
-	}
-
-	// custom transport config for unix socket
-	if c.socketPath != nil {
-		tr.DialContext = func(_ context.Context, _, _ string) (net.Conn, error) {
-			return net.Dial("unix", *c.socketPath)
-		}
-	}
-
-	// custom http client config
-	var client = &http.Client{
-		Transport: tr,
-	}
 
 	// prepare request object
 	reqObj := getRequestObject(method, params)
@@ -89,7 +67,7 @@ func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, e
 	defer cancel()
 
 	// send request
-	resp, err = ctxhttp.Do(ctx, client, req)
+	resp, err = ctxhttp.Do(ctx, c.httpClient, req)
 	if err != nil {
 		return nil, NewInternalError(ErrorPrefix, err)
 	}

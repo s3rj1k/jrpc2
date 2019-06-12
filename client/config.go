@@ -1,8 +1,12 @@
 package client
 
 import (
+	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
+	"net"
+	"net/http"
 	"time"
 )
 
@@ -22,6 +26,15 @@ func GetConfig(url string) *Config {
 
 	c.disableCompression = false
 	c.insecureSkipVerify = false
+
+	c.httpClient = &http.Client{
+		Transport: &http.Transport{
+			DisableCompression: c.disableCompression,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: c.insecureSkipVerify, // nolint: gosec
+			},
+		},
+	}
 
 	return c
 }
@@ -43,6 +56,18 @@ func GetSocketConfig(socket, endpoint string) *Config {
 
 	c.disableCompression = false
 	c.insecureSkipVerify = false
+
+	c.httpClient = &http.Client{
+		Transport: &http.Transport{
+			DisableCompression: c.disableCompression,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: c.insecureSkipVerify, // nolint: gosec
+			},
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", *c.socketPath)
+			},
+		},
+	}
 
 	return c
 }
