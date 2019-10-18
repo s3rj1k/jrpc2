@@ -2,7 +2,7 @@ GO_BIN ?= go
 
 export PATH := $(PATH):/usr/local/go/bin
 
-all: lint test
+all: lint
 
 update:
 	$(GO_BIN) get -u

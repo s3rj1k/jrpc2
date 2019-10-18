@@ -121,8 +121,9 @@ func (s *Service) AddAuthorization(username, password string, networks []string)
 	for _, network := range networks {
 		_, netObj, err := net.ParseCIDR(network)
 		if err != nil {
-			return fmt.Errorf("invalid network '%s': %v", network, err)
+			return fmt.Errorf("invalid network '%s': %w", network, err)
 		}
+
 		if netObj == nil {
 			return fmt.Errorf("invalid network '%s'", network)
 		}
@@ -154,7 +155,7 @@ func (s *Service) AddAuthorizationFromFile(path string) error {
 	// open authorization file
 	file, err := os.Open(path)
 	if err != nil {
-		return fmt.Errorf("failed to open authorization file: %v", err)
+		return fmt.Errorf("failed to open authorization file: %w", err)
 	}
 	defer file.Close()
 
@@ -169,7 +170,7 @@ func (s *Service) AddAuthorizationFromFile(path string) error {
 		// parse and fail on error
 		auth, err := parseLine(scanner.Text())
 		if err != nil {
-			return fmt.Errorf("failed to parse authorization file: %v", err)
+			return fmt.Errorf("failed to parse authorization file: %w", err)
 		}
 
 		if auth == nil {

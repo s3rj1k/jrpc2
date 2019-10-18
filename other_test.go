@@ -106,6 +106,7 @@ func TestGetPositionalFloat64Params(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	_verifyequal(t, fl, float64slice)
 
 	po.params = []byte(`["foo","bar","go"]`)
@@ -123,11 +124,14 @@ func TestGetPositionalIntParams(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	_verifyequal(t, in64, int64slice)
+
 	in, err := GetPositionalIntParams(po)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	_verifyequal(t, in, intslice)
 
 	po.params = []byte(`[14.4, 15.5, 17.7]`)
@@ -149,12 +153,14 @@ func TestGetPositionalUintParams(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	_verifyequal(t, uin64, uint64slice)
 
 	uin, err := GetPositionalUintParams(po)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	_verifyequal(t, uin, uintslice)
 
 	po.params = []byte(`[-14, 15, -17]`)
@@ -175,6 +181,7 @@ func TestGetPositionalStringParams(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	_verifyequal(t, st, stringslice)
 
 	po.params = []byte(`[-14, 15, -17]`)
@@ -188,6 +195,7 @@ func TestServiceMethods(t *testing.T) {
 
 	testService.SetBehindReverseProxyFlag(true)
 	_verifyequal(t, testService.GetBehindReverseProxyFlag(), true)
+
 	testService.SetBehindReverseProxyFlag(false)
 	_verifyequal(t, testService.GetBehindReverseProxyFlag(), false)
 
@@ -212,7 +220,9 @@ func TestServiceMethods(t *testing.T) {
 
 	// proxy must not register methods using simple register
 	testProxy.Register("randomName", Update)
+
 	var m map[string]method // deepEqual needs map
+
 	_verifyequal(t, testProxy.methods, m)
 }
 
@@ -438,7 +448,9 @@ func TestAddAuthorization(t *testing.T) {
 
 	for _, test := range tests {
 		err := testService.AddAuthorization(test.user, test.password, test.networks)
+
 		_verifyequal(t, err == nil, test.valid) // verify err
+
 		if err == nil {
 			auth := testService.auth[test.user]
 			_verifyequal(t, len(auth.Networks), len(test.networks)) // verify networks added
@@ -450,7 +462,9 @@ func TestAddAuthorization(t *testing.T) {
 
 func TestAddAuthorizationFromFile(t *testing.T) {
 	p := "/tmp/testaddauthfromfile"
+
 	_createfile(t, p, []byte("user:password:127.0.0.1/32\n#comment"))
+
 	defer os.Remove(p)
 
 	testService := Create("")
@@ -538,10 +552,13 @@ func TestParseLine(t *testing.T) {
 
 	for _, test := range tests {
 		auth, err := parseLine(test.line)
+
 		_verifyequal(t, err == nil, test.valid) // verify presence of error
-		if err == nil && auth != nil {          // if no error and auth received (line is not a comment or empty)
+
+		if err == nil && auth != nil { // if no error and auth received (line is not a comment or empty)
 			_verifyequal(t, auth.Username, test.user)     // verify user
 			_verifyequal(t, auth.Password, test.password) // verify password
+
 			for i := 0; i < len(test.networks); i++ {
 				net := auth.Networks[i]
 				_verifyequal(t, net.String(), test.networks[i]) // verify each network
@@ -630,21 +647,23 @@ func TestStart(t *testing.T) {
 	sock := "/tmp/socket"
 
 	testService.socket = nil
+
 	err := testService.Start()
 	_verifyequal(t, err == nil, false) // expecting error
-	testService.socket = &sock
 
+	testService.socket = &sock
 	testService.address = &sock
+
 	err = testService.Start()
 	_verifyequal(t, err == nil, false) // expecting error
+
 	testService.address = nil
 
 	_createfile(t, sock, []byte(""))
 	defer os.Remove(sock)
 
 	go func(t *testing.T, testService *Service) {
-		err := testService.Start()
-		if err != nil {
+		if err := testService.Start(); err != nil {
 			t.Error(err)
 		}
 	}(t, testService)
@@ -659,17 +678,21 @@ func TestTCPStart(t *testing.T) {
 	testService.address = nil // creating error conditions
 	err := testService.StartTCPTLS()
 	_verifyequal(t, err == nil, false) // expecting error
-	testService.address = &addr        // fix
 
-	testService.socket = &addr // creating error conditions
+	testService.address = &addr // fix
+	testService.socket = &addr  // creating error conditions
+
 	err = testService.StartTCPTLS()
 	_verifyequal(t, err == nil, false) // expecting error
-	testService.socket = nil           // fix
+
+	testService.socket = nil // fix
 
 	err = testService.StartTCPTLS()
 	_verifyequal(t, err == nil, false) // expecting error
 	_createfile(t, cert, []byte(""))
+
 	defer os.Remove(cert)
+
 	testService.cert = cert // fix
 
 	err = testService.StartTCPTLS()
@@ -772,6 +795,7 @@ func TestСontextWithProxyFlag(t *testing.T) {
 
 func TestСontextWithAuthorization(t *testing.T) {
 	ctx := context.Background()
+
 	var newAuth map[string]authorization
 
 	auth := authorizationFromContext(ctx)
@@ -811,6 +835,7 @@ func TestСontextWithHTTPStatusCode(t *testing.T) {
 
 func TestСontextWithHeaders(t *testing.T) {
 	ctx := context.Background()
+
 	var newHeaders map[string]string
 
 	headers := headersFromContext(ctx)
@@ -856,18 +881,23 @@ func _verifyequal(t *testing.T, a, b interface{}) {
 
 func _createfile(t *testing.T, path string, contents []byte) {
 	os.Remove(path)
+
 	f, err := os.Create(path)
 	if err != nil {
 		t.Error(err)
+
 		return
 	}
 	defer f.Close()
 
 	wr := bufio.NewWriter(f)
+
 	_, err = wr.Write(contents)
 	if err != nil {
 		t.Error(err)
+
 		return
 	}
+
 	wr.Flush()
 }

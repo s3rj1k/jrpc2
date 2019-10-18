@@ -21,8 +21,7 @@ func (s *Service) Start() error {
 	}
 
 	if _, err := os.Stat(*s.socket); !os.IsNotExist(err) {
-		err := syscall.Unlink(*s.socket)
-		if err != nil {
+		if err := syscall.Unlink(*s.socket); err != nil {
 			return err
 		}
 	}
@@ -43,14 +42,12 @@ func (s *Service) Start() error {
 	mux.Handle(s.route, s)
 
 	defer func() {
-		err = us.Close()
-		if err != nil {
+		if err = us.Close(); err != nil {
 			rerr = err
 		}
 	}()
 
-	err = http.Serve(us, mux)
-	if err != nil {
+	if err = http.Serve(us, mux); err != nil {
 		return err
 	}
 

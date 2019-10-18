@@ -105,6 +105,7 @@ func (e *InternalError) SetHTTPStatusCodes(returned, expected int) *InternalErro
 	if e.Returned == nil {
 		e.Returned = new(EmbeddedInternalError)
 	}
+
 	if e.Expected == nil {
 		e.Expected = new(EmbeddedInternalError)
 	}
@@ -120,6 +121,7 @@ func (e *InternalError) SetRPCIDs(returned, expected string) *InternalError {
 	if e.Returned == nil {
 		e.Returned = new(EmbeddedInternalError)
 	}
+
 	if e.Expected == nil {
 		e.Expected = new(EmbeddedInternalError)
 	}
@@ -135,6 +137,7 @@ func (e *InternalError) SetProtocolVersions(returned, expected string) *Internal
 	if e.Returned == nil {
 		e.Returned = new(EmbeddedInternalError)
 	}
+
 	if e.Expected == nil {
 		e.Expected = new(EmbeddedInternalError)
 	}
@@ -152,9 +155,11 @@ func (e *InternalError) Error() string {
 		if e.Expected.Code != nil {
 			msg = append(msg, fmt.Sprintf("expected HTTP status Code: %d", *e.Expected.Code))
 		}
+
 		if e.Expected.ID != nil {
 			msg = append(msg, fmt.Sprintf("expected JSON-RPC ID: %s", *e.Expected.ID))
 		}
+
 		if e.Expected.Protocol != nil {
 			msg = append(msg, fmt.Sprintf("expected JSON-RPC Protocol version: %s", *e.Expected.Protocol))
 		}
@@ -164,9 +169,11 @@ func (e *InternalError) Error() string {
 		if e.Returned.Code != nil {
 			msg = append(msg, fmt.Sprintf("returned HTTP status Code: %d", *e.Returned.Code))
 		}
+
 		if e.Returned.ID != nil {
 			msg = append(msg, fmt.Sprintf("returned JSON-RPC ID: %s", *e.Returned.ID))
 		}
+
 		if e.Returned.Protocol != nil {
 			msg = append(msg, fmt.Sprintf("returned JSON-RPC Protocol version: %s", *e.Returned.Protocol))
 		}
