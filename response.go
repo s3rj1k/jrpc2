@@ -31,8 +31,8 @@ func DefaultResponseObject() *ResponseObject {
 }
 
 // Marshal create a bytes encoded representation of a single response object.
-func (r *ResponseObject) Marshal() []byte {
-	b, err := json.Marshal(r)
+func (responseObject *ResponseObject) Marshal() []byte {
+	b, err := json.Marshal(responseObject)
 	if err != nil {
 		return []byte(
 			fmt.Sprintf(

@@ -35,6 +35,7 @@ func ConvertIDtoString(id *json.RawMessage) (string, *ErrorObject) {
 				Data:    "ID must be one of string, number or undefined",
 			}
 		}
+
 		return strconv.FormatFloat(v, 'f', 0, 64), nil // convert number to string
 	case string:
 		return v, nil

@@ -105,7 +105,6 @@ func Subtract(data ParametersObject) (interface{}, *ErrorObject) {
 		case *json.UnmarshalTypeError:
 			switch v.Value {
 			case "array":
-
 				var params []float64
 
 				params, errObj = GetPositionalFloat64Params(data)
@@ -123,7 +122,6 @@ func Subtract(data ParametersObject) (interface{}, *ErrorObject) {
 
 				paramObj.X = &params[0]
 				paramObj.Y = &params[1]
-
 			default:
 				return nil, errObj
 			}
@@ -174,11 +172,13 @@ func TestMain(m *testing.M) {
 			log.Fatalln(err)
 		}
 	}
+
 	if _, err := os.Stat(authSocket); !os.IsNotExist(err) {
 		if err := os.Remove(authSocket); err != nil {
 			log.Fatalln(err)
 		}
 	}
+
 	if _, err := os.Stat(proxySocket); !os.IsNotExist(err) {
 		if err := os.Remove(proxySocket); err != nil {
 			log.Fatalln(err)
@@ -255,18 +255,23 @@ func TestMain(m *testing.M) {
 	// Wait for Unix Socket to be created
 	for {
 		time.Sleep(1 * time.Millisecond)
+
 		if _, err := os.Stat(serverSocket); !os.IsNotExist(err) {
 			break
 		}
 	}
+
 	for {
 		time.Sleep(1 * time.Millisecond)
+
 		if _, err := os.Stat(authSocket); !os.IsNotExist(err) {
 			break
 		}
 	}
+
 	for {
 		time.Sleep(1 * time.Millisecond)
+
 		if _, err := os.Stat(proxySocket); !os.IsNotExist(err) {
 			break
 		}
@@ -324,6 +329,7 @@ func TestClientLibrary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if result != 42 {
 		t.Fatal("expected result to be '42'")
 	}
@@ -370,6 +376,7 @@ func TestNonPOSTRequestType(t *testing.T) {
 	if resp.StatusCode != http.StatusMethodNotAllowed {
 		t.Fatalf("expected HTTP status code to be '%d'", http.StatusMethodNotAllowed)
 	}
+
 	if v := resp.Header.Get("Allow"); v != "POST" {
 		t.Fatal("expected Allow header to be 'POST'")
 	}
@@ -382,18 +389,23 @@ func TestNonPOSTRequestType(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if result.ID != nil {
 		t.Fatal("expected ID to be 'nil'")
 	}
+
 	if result.Result != nil {
 		t.Fatal("expected Result to be 'nil'")
 	}
+
 	if result.Error == nil {
 		t.Fatal("expected Error to be not 'nil'")
 	}
+
 	if result.Error.Code != InvalidRequestCode {
 		t.Fatalf("expected Error Code to be '%d'", InvalidRequestCode)
 	}
+
 	if result.Error.Message != InvalidRequestMessage {
 		t.Fatalf("expected Error Message to be '%s'", InvalidRequestMessage)
 	}
@@ -434,18 +446,23 @@ func TestRequestHeaderWrongContentType(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if result.ID != nil {
 		t.Fatal("expected ID to be 'nil'")
 	}
+
 	if result.Result != nil {
 		t.Fatal("expected Result to be 'nil'")
 	}
+
 	if result.Error == nil {
 		t.Fatal("expected Error to be not 'nil'")
 	}
+
 	if result.Error.Code != ParseErrorCode {
 		t.Fatalf("expected Error Code to be '%d'", ParseErrorCode)
 	}
+
 	if result.Error.Message != ParseErrorMessage {
 		t.Fatalf("expected Error Message to be '%s'", ParseErrorMessage)
 	}
@@ -486,18 +503,23 @@ func TestRequestHeaderWrongAccept(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if result.ID != nil {
 		t.Fatal("expected ID to be 'nil'")
 	}
+
 	if result.Result != nil {
 		t.Fatal("expected Result to be 'nil'")
 	}
+
 	if result.Error == nil {
 		t.Fatal("expected Error to be not 'nil'")
 	}
+
 	if result.Error.Code != ParseErrorCode {
 		t.Fatalf("expected Error Code to be '%d'", ParseErrorCode)
 	}
+
 	if result.Error.Message != ParseErrorMessage {
 		t.Fatalf("expected Error Message to be '%s'", ParseErrorMessage)
 	}
@@ -556,6 +578,7 @@ func TestResponseHeaders(t *testing.T) {
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("expected HTTP status code to be '%d'", http.StatusBadRequest)
 	}
+
 	if v := resp.Header.Get("Server"); v != "JSON-RPC/2.0 (Golang)" {
 		t.Fatal("got unexpected Server value")
 	}
@@ -686,12 +709,15 @@ func TestIDStringType(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if val, ok := result.ID.(string); !ok || val != "ID:42" {
 		t.Fatal("expected ID to be 'ID:42'")
 	}
+
 	if result.Error != nil {
 		t.Fatal("expected Error to be 'nil'")
 	}
+
 	if result.Result != nil {
 		t.Fatal("expected Result to be 'nil'")
 	}
@@ -729,12 +755,15 @@ func TestIDNumberType(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if val, ok := result.ID.(float64); !ok || val != float64(42) {
 		t.Fatal("expected ID to be '42'")
 	}
+
 	if result.Error != nil {
 		t.Fatal("expected Error to be 'nil'")
 	}
+
 	if result.Result != nil {
 		t.Fatal("expected Result to be 'nil'")
 	}
@@ -772,15 +801,19 @@ func TestInternalParamsPassthrough(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if val, ok := result.ID.(float64); !ok || val != float64(42) {
 		t.Fatal("expected ID to be '42'")
 	}
+
 	if result.Error != nil {
 		t.Fatal("expected Error to be 'nil'")
 	}
+
 	if result.Result == nil {
 		t.Fatal("expected Result to be not 'nil'")
 	}
+
 	if _, ok := result.Result.(map[string]interface{}); !ok {
 		t.Fatal("expected Result type to be 'map[string]interface{}'")
 	}
@@ -788,18 +821,23 @@ func TestInternalParamsPassthrough(t *testing.T) {
 	if val, ok := result.Result.(map[string]interface{})["RemoteAddress"].(string); !ok || !strings.HasPrefix(val, "127.0.0.1") {
 		t.Fatal("expected RemoteAddress to contain '127.0.0.1'")
 	}
+
 	if val, ok := result.Result.(map[string]interface{})["UserAgent"].(string); !ok || !strings.EqualFold(val, "Go-http-client/1.1") {
 		t.Fatal("expected UserAgent to be 'Go-http-client/1.1'")
 	}
+
 	if val, ok := result.Result.(map[string]interface{})["ID"].(string); !ok || val != "42" {
 		t.Fatal("expected ID to be '42'")
 	}
+
 	if val, ok := result.Result.(map[string]interface{})["ID"].(string); !ok || val != "42" {
 		t.Fatal("expected ID to be '42'")
 	}
+
 	if val, ok := result.Result.(map[string]interface{})["Method"].(string); !ok || val != "copy" {
 		t.Fatal("expected Method to be 'copy'")
 	}
+
 	if val, ok := result.Result.(map[string]interface{})["Params"].(float64); !ok || val != float64(42) {
 		t.Fatal("expected Params to be '42'")
 	}
@@ -828,6 +866,7 @@ func TestProxyInternalParamsPassthrough(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected HTTP status code to be '%d'", http.StatusOK)
 	}
+
 	if v := resp.Header.Get("Server"); v != "JSON-RPC/2.0 Proxy (Golang)" {
 		t.Fatal("got unexpected Server value")
 	}
@@ -840,15 +879,19 @@ func TestProxyInternalParamsPassthrough(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if val, ok := result.ID.(float64); !ok || val != float64(42) {
 		t.Fatal("expected ID to be '42'")
 	}
+
 	if result.Error != nil {
 		t.Fatal("expected Error to be 'nil'")
 	}
+
 	if result.Result == nil {
 		t.Fatal("expected Result to be not 'nil'")
 	}
+
 	if _, ok := result.Result.(map[string]interface{}); !ok {
 		t.Fatal("expected Result type to be 'map[string]interface{}'")
 	}
@@ -856,18 +899,23 @@ func TestProxyInternalParamsPassthrough(t *testing.T) {
 	if val, ok := result.Result.(map[string]interface{})["RemoteAddress"].(string); !ok || !strings.HasPrefix(val, "127.0.0.1") {
 		t.Fatal("expected RemoteAddress to contain '127.0.0.1'")
 	}
+
 	if val, ok := result.Result.(map[string]interface{})["UserAgent"].(string); !ok || !strings.EqualFold(val, "Go-http-client/1.1") {
 		t.Fatal("expected UserAgent to be 'Go-http-client/1.1'")
 	}
+
 	if val, ok := result.Result.(map[string]interface{})["ID"].(string); !ok || val != "42" {
 		t.Fatal("expected ID to be '42'")
 	}
+
 	if val, ok := result.Result.(map[string]interface{})["ID"].(string); !ok || val != "42" {
 		t.Fatal("expected ID to be '42'")
 	}
+
 	if val, ok := result.Result.(map[string]interface{})["Method"].(string); !ok || val != "copy" {
 		t.Fatal("expected Method to be 'copy'")
 	}
+
 	if val, ok := result.Result.(map[string]interface{})["Params"].(float64); !ok || val != float64(42) {
 		t.Fatal("expected Params to be '42'")
 	}
@@ -914,18 +962,23 @@ func TestIDTypeError(t *testing.T) {
 		if result.Jsonrpc != JSONRPCVersion {
 			t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 		}
+
 		if result.ID != nil {
 			t.Fatal("expected ID to be 'nil'")
 		}
+
 		if result.Result != nil {
 			t.Fatal("expected Result to be 'nil'")
 		}
+
 		if result.Error == nil {
 			t.Fatal("expected Error to be not 'nil'")
 		}
+
 		if result.Error.Code != InvalidIDCode {
 			t.Fatalf("expected Error Code to be '%d'", InvalidIDCode)
 		}
+
 		if result.Error.Message != InvalidIDMessage {
 			t.Fatalf("expected Error Message to be '%s'", InvalidIDMessage)
 		}
@@ -962,18 +1015,23 @@ func TestNonExistentMethod(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if val, ok := result.ID.(float64); !ok || val != float64(id) {
 		t.Fatalf("expected ID to be '%d'", id)
 	}
+
 	if result.Result != nil {
 		t.Fatal("expected Result to be 'nil'")
 	}
+
 	if result.Error == nil {
 		t.Fatal("expected Error to be not 'nil'")
 	}
+
 	if result.Error.Code != MethodNotFoundCode {
 		t.Fatalf("expected Error Code to be '%d'", MethodNotFoundCode)
 	}
+
 	if result.Error.Message != MethodNotFoundMessage {
 		t.Fatalf("expected Error Message to be '%s'", MethodNotFoundMessage)
 	}
@@ -1011,18 +1069,23 @@ func TestInvalidMethodObjectType(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if result.ID != nil {
 		t.Fatal("expected ID to be 'nil'")
 	}
+
 	if result.Result != nil {
 		t.Fatal("expected Result to be 'nil'")
 	}
+
 	if result.Error == nil {
 		t.Fatal("expected Error to be not 'nil'")
 	}
+
 	if result.Error.Code != InvalidMethodCode {
 		t.Fatalf("expected Error Code to be '%d'", InvalidMethodCode)
 	}
+
 	if result.Error.Message != InvalidMethodMessage {
 		t.Fatalf("expected Error Message to be '%s'", InvalidMethodMessage)
 	}
@@ -1060,15 +1123,19 @@ func TestNamedParameters(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if val, ok := result.ID.(float64); !ok || val != float64(id) {
 		t.Fatalf("expected ID to be '%d'", id)
 	}
+
 	if result.Error != nil {
 		t.Fatal("expected Error to be 'nil'")
 	}
+
 	if result.Result == nil {
 		t.Fatal("expected Result to be not 'nil'")
 	}
+
 	if result.Result.(float64) != float64(x-y) {
 		t.Fatalf("expected Result to be '%f'", float64(x-y))
 	}
@@ -1147,18 +1214,23 @@ func TestBatchNotifications(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if result.ID != nil {
 		t.Fatal("expected ID to be 'nil'")
 	}
+
 	if result.Result != nil {
 		t.Fatalf("expected Result to be 'nil'")
 	}
+
 	if result.Error == nil {
 		t.Fatal("expected Error to be not 'nil'")
 	}
+
 	if result.Error.Code != NotImplementedCode {
 		t.Fatalf("expected Error Code to be '%d'", NotImplementedCode)
 	}
+
 	if result.Error.Message != NotImplementedMessage {
 		t.Fatalf("expected Error Message to be '%s'", NotImplementedMessage)
 	}
@@ -1196,15 +1268,19 @@ func TestPositionalParamters(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if val, ok := result.ID.(float64); !ok || val != float64(id) {
 		t.Fatalf("expected ID to be '%d'", id)
 	}
+
 	if result.Error != nil {
 		t.Fatal("expected Error to be 'nil'")
 	}
+
 	if result.Result == nil {
 		t.Fatal("expected Result to be not 'nil'")
 	}
+
 	if result.Result.(float64) != float64(x-y) {
 		t.Fatalf("expected Result to be '%f'", float64(x-y))
 	}
@@ -1242,21 +1318,27 @@ func TestPositionalParamtersError(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if val, ok := result.ID.(float64); !ok || val != float64(id) {
 		t.Fatalf("expected ID to be '%d'", id)
 	}
+
 	if result.Result != nil {
 		t.Fatal("expected Result to be 'nil'")
 	}
+
 	if result.Error == nil {
 		t.Fatal("expected Error to be not 'nil'")
 	}
+
 	if result.Error.Code != -320099 {
 		t.Fatal("expected code to be '-320099'")
 	}
+
 	if result.Error.Message != "Custom error" {
 		t.Fatal("expected message to be 'Custom error'")
 	}
+
 	if result.Error.Data != "mock server error" {
 		t.Fatal("expected data to be 'mock server error'")
 	}
@@ -1294,18 +1376,23 @@ func TestInvalidJSON(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if result.ID != nil {
 		t.Fatal("expected ID to be 'nil'")
 	}
+
 	if result.Result != nil {
 		t.Fatal("expected Result to be 'nil'")
 	}
+
 	if result.Error == nil {
 		t.Fatal("expected Error to be not 'nil'")
 	}
+
 	if result.Error.Code != ParseErrorCode {
 		t.Fatalf("expected Error Code to be '%d'", ParseErrorCode)
 	}
+
 	if result.Error.Message != ParseErrorMessage {
 		t.Fatalf("expected Error Message to be '%s'", ParseErrorMessage)
 	}
@@ -1348,18 +1435,23 @@ func TestBatchInvalidJSON(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if result.ID != nil {
 		t.Fatal("expected ID to be 'nil'")
 	}
+
 	if result.Result != nil {
 		t.Fatal("expected Result to be 'nil'")
 	}
+
 	if result.Error == nil {
 		t.Fatal("expected Error to be not 'nil'")
 	}
+
 	if result.Error.Code != ParseErrorCode {
 		t.Fatalf("expected Error Code to be '%d'", ParseErrorCode)
 	}
+
 	if result.Error.Message != ParseErrorMessage {
 		t.Fatalf("expected Error Message to be '%s'", ParseErrorMessage)
 	}
@@ -1397,21 +1489,27 @@ func TestBatchEmptyArray(t *testing.T) {
 	if result.Jsonrpc != JSONRPCVersion {
 		t.Fatalf("expected Jsonrpc to be '%s'", JSONRPCVersion)
 	}
+
 	if result.ID != nil {
 		t.Fatal("expected ID to be 'nil'")
 	}
+
 	if result.Result != nil {
 		t.Fatalf("expected Result to be 'nil'")
 	}
+
 	if result.Error == nil {
 		t.Fatal("expected Error to be not 'nil'")
 	}
+
 	if result.Error.Code != NotImplementedCode {
 		t.Fatalf("expected Error Code to be '%d'", NotImplementedCode)
 	}
+
 	if result.Error.Message != NotImplementedMessage {
 		t.Fatalf("expected Error Message to be '%s'", NotImplementedMessage)
 	}
+
 	if result.Error.Data != "batch requests not supported" {
 		t.Fatal("expected data to be 'batch requests not supported'")
 	}
@@ -1616,9 +1714,12 @@ func TestCheckAuthorization(t *testing.T) {
 		authSocket,
 		postHeaders,
 	)
+
 	if err != nil || resp.StatusCode != 403 {
 		t.Errorf("expecting Status 403 (got %d) forbidden and no errors (got %v)", resp.StatusCode, err)
 	}
+
+	defer resp.Body.Close()
 
 	newHeaders := map[string]string{
 		"Accept":        "application/json",                           // set Accept header
@@ -1634,9 +1735,12 @@ func TestCheckAuthorization(t *testing.T) {
 		authSocket,
 		newHeaders,
 	)
+
 	if err != nil || resp.StatusCode != 200 {
 		t.Errorf("expecting Status 200 (got %d) forbidden and no errors (got %v)", resp.StatusCode, err)
 	}
+
+	defer resp.Body.Close()
 
 	// setting up error: bad IP header
 	newHeaders["X-Real-IP"] = "8.8.8.8"
@@ -1646,9 +1750,13 @@ func TestCheckAuthorization(t *testing.T) {
 		authSocket,
 		newHeaders,
 	)
+
 	if err != nil || resp.StatusCode != 403 {
 		t.Errorf("expecting Status 403 (got %d) forbidden and no errors (got %v)", resp.StatusCode, err)
 	}
+
+	defer resp.Body.Close()
+
 	// recover
 	newHeaders["X-Real-IP"] = "127.0.0.1"
 
@@ -1660,9 +1768,12 @@ func TestCheckAuthorization(t *testing.T) {
 		authSocket,
 		newHeaders,
 	)
+
 	if err != nil || resp.StatusCode != 403 {
 		t.Errorf("expecting Status 403 (got %d) forbidden and no errors (got %v)", resp.StatusCode, err)
 	}
+
+	defer resp.Body.Close()
 
 	// setting up error: new password (plain text), old auth header - bcrypted
 	err = authService.AddAuthorization("bcrypt_user", "plain_text", []string{"127.0.0.1/32"})
@@ -1676,7 +1787,10 @@ func TestCheckAuthorization(t *testing.T) {
 		authSocket,
 		newHeaders,
 	)
+
 	if err != nil || resp.StatusCode != 403 {
 		t.Errorf("expecting Status 403 (got %d) forbidden and no errors (got %v)", resp.StatusCode, err)
 	}
+
+	defer resp.Body.Close()
 }

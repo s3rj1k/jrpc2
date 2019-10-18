@@ -9,8 +9,8 @@ import (
 // genUUID - generates UUIDv4 (random), see: https://en.wikipedia.org/wiki/Universally_unique_identifier
 func genUUID() string {
 	u := make([]byte, 16)
-	_, err := rand.Read(u)
-	if err != nil {
+
+	if _, err := rand.Read(u); err != nil {
 		return "0d15ea5e-dead-dead-dead-defec8eddead"
 	}
 

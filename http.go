@@ -271,6 +271,4 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// write response to HTTP writer
 	s.WriteRespose(w, respObj)
-
-	// end request processing
-}
+} // end request processing

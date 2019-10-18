@@ -73,12 +73,7 @@ func (c *Config) Call(method string, params json.RawMessage) (json.RawMessage, e
 	}
 
 	// close response body
-	defer func(resp *http.Response) {
-		err = resp.Body.Close()
-		if err != nil {
-			rerr = NewInternalError(ErrorPrefix, err)
-		}
-	}(resp)
+	defer resp.Body.Close()
 
 	// fail when HTTP status code is different from 200
 	if resp.StatusCode != http.StatusOK {
