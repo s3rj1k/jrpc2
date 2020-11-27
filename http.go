@@ -15,7 +15,7 @@ import (
 // WriteRespose writes JSON-RPC 2.0 response object to HTTP response writer.
 func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
 	// set custom response headers
-	var headers = s.headers
+	var headers = s.GetHeaders()
 
 	// set dynamic response headers
 	for header, value := range headersFromContext(respObj.r.Context()) {

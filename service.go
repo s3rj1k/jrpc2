@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 )
 
 // Service represents a JSON-RPC 2.0 capable HTTP server.
 type Service struct {
-	// fields below are intentionally unexported
+	// exclusion lock
+	mu sync.Mutex
 
+	// fields below are intentionally unexported
 	cert string // path to cert.pem (for TCP with TLS)
 	key  string // path to key.pem (for TCP with TLS)
 
@@ -99,7 +102,7 @@ func CreateProxy(socket string) *Service {
 
 		behindReverseProxy: true,
 
-		headers: make(map[string]string),
+		headers:  make(map[string]string),
 		methods: nil,
 		auth:    nil,
 
@@ -139,6 +142,16 @@ func CreateProxyOverTCPWithTLS(address, route, key, cert string) *Service {
 			return nil
 		},
 	}
+}
+
+// Lock locks Service
+func (s *Service) Lock() {
+	s.mu.Lock()
+}
+
+// Unlock unlocks Service
+func (s *Service) Unlock() {
+	s.mu.Unlock()
 }
 
 // SetSocket sets custom unix socket in service object.
@@ -231,12 +244,26 @@ func (s *Service) GetCertificateKeyFilePath() string {
 
 // SetHeaders sets custom headers in service object.
 func (s *Service) SetHeaders(headers map[string]string) {
+	s.Lock()
+	defer s.Unlock()
+
 	s.headers = headers
 }
 
 // GetHeaders gets custom headers from service object.
 func (s *Service) GetHeaders() map[string]string {
-	return s.headers
+	s.Lock()
+	defer s.Unlock()
+
+	// prepare struct for results
+	out := make(map[string]string)
+
+	// copy headers to new map
+	for k, v := range s.headers {
+		out[k] = v
+	}
+
+	return out
 }
 
 // Register maps the provided method name to the given function for later method calls.
