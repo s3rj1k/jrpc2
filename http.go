@@ -12,8 +12,8 @@ import (
     - https://www.simple-is-better.org/json-rpc/transport_http.html
 */
 
-// WriteRespose writes JSON-RPC 2.0 response object to HTTP response writer.
-func (s *Service) WriteRespose(w http.ResponseWriter, respObj *ResponseObject) {
+// WriteResponse writes JSON-RPC 2.0 response object to HTTP response writer.
+func (s *Service) WriteResponse(w http.ResponseWriter, respObj *ResponseObject) {
 	// set custom response headers
 	var headers = s.GetHeaders()
 
@@ -106,7 +106,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// write response to HTTP writer
-		s.WriteRespose(w, respObj)
+		s.WriteResponse(w, respObj)
 
 		// end request processing
 		return
@@ -126,7 +126,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// check HTTP protocol version
 	if ok := respObj.ValidateHTTPProtocolVersion(r); !ok {
 		// write response to HTTP writer
-		s.WriteRespose(w, respObj)
+		s.WriteResponse(w, respObj)
 
 		// end request processing
 		return
@@ -135,7 +135,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// check request Method
 	if ok := respObj.ValidateHTTPRequestMethod(r); !ok {
 		// write response to HTTP writer
-		s.WriteRespose(w, respObj)
+		s.WriteResponse(w, respObj)
 
 		// end request processing
 		return
@@ -144,7 +144,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// check request headers
 	if ok := respObj.ValidateHTTPRequestHeaders(r); !ok {
 		// write response to HTTP writer
-		s.WriteRespose(w, respObj)
+		s.WriteResponse(w, respObj)
 
 		// end request processing
 		return
@@ -176,7 +176,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 
 				// write response to HTTP writer
-				s.WriteRespose(w, respObj)
+				s.WriteResponse(w, respObj)
 
 				// end request processing
 				return
@@ -192,21 +192,21 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 
 				// write response to HTTP writer
-				s.WriteRespose(w, respObj)
+				s.WriteResponse(w, respObj)
 
 				// end request processing
 				return
 			}
 
 			// write response to HTTP writer for other data type error
-			s.WriteRespose(w, respObj)
+			s.WriteResponse(w, respObj)
 
 			// end request processing
 			return
 
 		default: // other error
 			// write response to HTTP writer
-			s.WriteRespose(w, respObj)
+			s.WriteResponse(w, respObj)
 
 			// end request processing
 			return
@@ -216,7 +216,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// validate JSON-RPC 2.0 request version member
 	if ok := respObj.ValidateJSONRPCVersionNumber(r, reqObj.Jsonrpc); !ok {
 		// write response to HTTP writer
-		s.WriteRespose(w, respObj)
+		s.WriteResponse(w, respObj)
 
 		// end request processing
 		return
@@ -229,7 +229,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		respObj.Error = errObj
 
 		// write response to HTTP writer
-		s.WriteRespose(w, respObj)
+		s.WriteResponse(w, respObj)
 
 		// end request processing
 		return
@@ -263,12 +263,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		respObj.Error = errObj
 
 		// write response to HTTP writer
-		s.WriteRespose(w, respObj)
+		s.WriteResponse(w, respObj)
 
 		// end request processing
 		return
 	}
 
 	// write response to HTTP writer
-	s.WriteRespose(w, respObj)
+	s.WriteResponse(w, respObj)
 } // end request processing

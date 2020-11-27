@@ -102,7 +102,7 @@ func CreateProxy(socket string) *Service {
 
 		behindReverseProxy: true,
 
-		headers:  make(map[string]string),
+		headers: make(map[string]string),
 		methods: nil,
 		auth:    nil,
 
@@ -144,12 +144,12 @@ func CreateProxyOverTCPWithTLS(address, route, key, cert string) *Service {
 	}
 }
 
-// Lock locks Service
+// Lock locks Service.
 func (s *Service) Lock() {
 	s.mu.Lock()
 }
 
-// Unlock unlocks Service
+// Unlock unlocks Service.
 func (s *Service) Unlock() {
 	s.mu.Unlock()
 }
